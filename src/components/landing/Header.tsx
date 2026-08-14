@@ -33,7 +33,9 @@ export default function Header({ logo, phoneDisplay, onOpenQuote }: Props) {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled || open ? "bg-navy/95 backdrop-blur shadow-lg shadow-black/20" : "bg-transparent"
+        scrolled || open
+          ? "bg-navy/95 backdrop-blur shadow-lg shadow-black/20"
+          : "bg-gradient-to-b from-navy/80 via-navy/40 to-transparent"
       }`}
     >
       <div className="relative z-40 container-page flex items-center justify-between py-3">
@@ -76,11 +78,11 @@ export default function Header({ logo, phoneDisplay, onOpenQuote }: Props) {
         </div>
 
         <button
-          className="lg:hidden text-white p-2"
+          className="lg:hidden text-white p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10"
           onClick={() => setOpen((v) => !v)}
           aria-label="Abrir menú"
         >
-          {open ? <X size={26} /> : <Menu size={26} />}
+          {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 

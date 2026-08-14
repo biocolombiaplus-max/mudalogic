@@ -16,6 +16,8 @@ import {
   ShieldCheck,
   HelpCircle,
   AlertTriangle,
+  Wand2,
+  Loader2,
 } from "lucide-react";
 import type { SiteContent } from "@/lib/settings";
 import { ICON_OPTIONS } from "@/lib/icon-map";
@@ -35,6 +37,8 @@ const TABS = [
 export default function ContentEditor({ initial }: { initial: SiteContent }) {
   const [tab, setTab] = useState("general");
   const [logo, setLogo] = useState(initial.logo);
+  const [fixingLogo, setFixingLogo] = useState(false);
+  const [fixLogoError, setFixLogoError] = useState("");
   const [phone, setPhone] = useState(initial.phone_display);
   const [whatsapp, setWhatsapp] = useState(initial.whatsapp);
   const [email, setEmail] = useState(initial.email);
@@ -107,6 +111,21 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
     }
   }
 
+  async function handleFixLogo() {
+    setFixingLogo(true);
+    setFixLogoError("");
+    try {
+      const res = await fetch("/api/admin/logo/remove-background", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo procesar el logo");
+      setLogo(data.url);
+    } catch (e) {
+      setFixLogoError(e instanceof Error ? e.message : "No se pudo procesar el logo");
+    } finally {
+      setFixingLogo(false);
+    }
+  }
+
   return (
     <div>
       <div className="sticky top-0 lg:top-0 z-10 bg-neutral-50/95 backdrop-blur pb-4 -mt-1 pt-1">
@@ -139,15 +158,29 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
       {tab === "general" && (
         <Card>
           <div className="grid md:grid-cols-2 gap-6">
-            <ImageUploader
-              value={logo}
-              onChange={setLogo}
-              label="Logo"
-              aspect="aspect-[3/1]"
-              fit="contain"
-              allowBgRemoval
-              transparentPreview
-            />
+            <div>
+              <ImageUploader
+                value={logo}
+                onChange={setLogo}
+                label="Logo"
+                aspect="aspect-[3/1]"
+                fit="contain"
+                allowBgRemoval
+                transparentPreview
+              />
+              {logo && (
+                <button
+                  type="button"
+                  onClick={handleFixLogo}
+                  disabled={fixingLogo}
+                  className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-brand disabled:opacity-60"
+                >
+                  {fixingLogo ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
+                  {fixingLogo ? "Quitando fondo..." : "Quitar fondo del logo actual"}
+                </button>
+              )}
+              {fixLogoError && <p className="mt-1 text-xs text-red-600">{fixLogoError}</p>}
+            </div>
             <div className="space-y-4">
               <TextField label="Teléfono para mostrar" value={phone} onChange={setPhone} placeholder="313 847 0094" />
               <TextField
