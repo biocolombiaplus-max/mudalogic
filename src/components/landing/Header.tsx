@@ -13,8 +13,8 @@ type Props = {
 const links = [
   { href: "#servicios", label: "Servicios" },
   { href: "#como-funciona", label: "Cómo funciona" },
-  { href: "#galeria", label: "Galería" },
-  { href: "#testimonios", label: "Testimonios" },
+  { href: "#ubicacion", label: "Ubicación" },
+  { href: "#preguntas", label: "Preguntas" },
   { href: "#rastreo", label: "Rastrear mudanza" },
   { href: "#contacto", label: "Contacto" },
 ];

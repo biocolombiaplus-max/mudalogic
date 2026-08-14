@@ -12,19 +12,24 @@ import {
   MessageSquareQuote,
   BarChart3,
   Sparkles,
+  MapPin,
+  ShieldCheck,
+  HelpCircle,
 } from "lucide-react";
 import type { SiteContent } from "@/lib/settings";
+import { ICON_OPTIONS } from "@/lib/icon-map";
 import ImageUploader from "./ImageUploader";
 
 const TABS = [
   { id: "general", label: "General", icon: Building2 },
   { id: "hero", label: "Portada", icon: Sparkles },
   { id: "servicios", label: "Servicios", icon: BarChart3 },
+  { id: "confianza", label: "Confianza", icon: ShieldCheck },
+  { id: "ubicacion", label: "Ubicación", icon: MapPin },
   { id: "galeria", label: "Galería", icon: ImageIcon },
   { id: "testimonios", label: "Testimonios", icon: MessageSquareQuote },
+  { id: "preguntas", label: "Preguntas", icon: HelpCircle },
 ];
-
-const ICON_OPTIONS = ["box", "truck", "price", "doc", "map", "team"];
 
 export default function ContentEditor({ initial }: { initial: SiteContent }) {
   const [tab, setTab] = useState("general");
@@ -34,6 +39,8 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
   const [email, setEmail] = useState(initial.email);
   const [addrCucuta, setAddrCucuta] = useState(initial.address_cucuta);
   const [addrMedellin, setAddrMedellin] = useState(initial.address_medellin);
+  const [cucutaImage, setCucutaImage] = useState(initial.locationCucutaImage);
+  const [medellinImage, setMedellinImage] = useState(initial.locationMedellinImage);
 
   const [heroTitle, setHeroTitle] = useState(initial.heroTitle);
   const [heroSubtitle, setHeroSubtitle] = useState(initial.heroSubtitle);
@@ -41,8 +48,10 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
   const [stats, setStats] = useState(initial.stats);
 
   const [services, setServices] = useState(initial.services);
+  const [trustBadges, setTrustBadges] = useState(initial.trustBadges);
   const [gallery, setGallery] = useState(initial.gallery);
   const [testimonials, setTestimonials] = useState(initial.testimonials);
+  const [faq, setFaq] = useState(initial.faq);
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -57,6 +66,8 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
       "site.email": email,
       "site.address_cucuta": addrCucuta,
       "site.address_medellin": addrMedellin,
+      "location.cucuta_image": cucutaImage,
+      "location.medellin_image": medellinImage,
       "hero.title": heroTitle,
       "hero.subtitle": heroSubtitle,
       "hero.image": heroImage,
@@ -65,8 +76,10 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
       "stats.cities": stats.cities,
       "stats.rating": stats.rating,
       services: JSON.stringify(services),
+      trust_badges: JSON.stringify(trustBadges),
       "gallery.images": JSON.stringify(gallery),
       testimonials: JSON.stringify(testimonials),
+      faq: JSON.stringify(faq),
     };
     await fetch("/api/admin/settings", {
       method: "PUT",
@@ -117,10 +130,6 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
               <TextField label="Correo electrónico" value={email} onChange={setEmail} placeholder="mudalogic.adm@gmail.com" />
             </div>
           </div>
-          <div className="grid md:grid-cols-2 gap-6 mt-6">
-            <TextField label="Dirección sede Cúcuta" value={addrCucuta} onChange={setAddrCucuta} />
-            <TextField label="Dirección sede Medellín" value={addrMedellin} onChange={setAddrMedellin} />
-          </div>
         </Card>
       )}
 
@@ -144,6 +153,10 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
 
       {tab === "servicios" && (
         <Card>
+          <p className="text-xs text-neutral-500 mb-4">
+            Sube una foto real de cada servicio (equipo empacando, camión, etc.) para que se vea más confiable. Si
+            dejas la imagen vacía se muestra solo el ícono.
+          </p>
           <div className="space-y-4">
             {services.map((s, i) => (
               <div key={i} className="rounded-xl border border-neutral-200 p-4 relative">
@@ -153,7 +166,17 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
                 >
                   <Trash2 size={16} />
                 </button>
-                <div className="grid md:grid-cols-[140px_1fr] gap-4">
+                <div className="grid md:grid-cols-[160px_140px_1fr] gap-4">
+                  <ImageUploader
+                    label="Foto"
+                    value={s.image ?? ""}
+                    onChange={(url) => {
+                      const next = [...services];
+                      next[i] = { ...s, image: url };
+                      setServices(next);
+                    }}
+                    aspect="aspect-square"
+                  />
                   <label className="block">
                     <span className="text-xs font-bold text-neutral-500 uppercase">Icono</span>
                     <select
@@ -184,7 +207,7 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
                     />
                     <TextAreaField
                       label="Descripción"
-                      rows={2}
+                      rows={3}
                       value={s.desc}
                       onChange={(v) => {
                         const next = [...services];
@@ -198,11 +221,104 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
             ))}
           </div>
           <button
-            onClick={() => setServices([...services, { title: "Nuevo servicio", desc: "", icon: "box" }])}
+            onClick={() => setServices([...services, { title: "Nuevo servicio", desc: "", icon: "box", image: "" }])}
             className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-brand"
           >
             <Plus size={16} /> Agregar servicio
           </button>
+        </Card>
+      )}
+
+      {tab === "confianza" && (
+        <Card>
+          <p className="text-xs text-neutral-500 mb-4">
+            Estos son los sellos de confianza que aparecen justo debajo de la portada (ej: seguro incluido, personal
+            verificado, contrato digital, rastreo en tiempo real).
+          </p>
+          <div className="space-y-4">
+            {trustBadges.map((b, i) => (
+              <div key={i} className="rounded-xl border border-neutral-200 p-4 relative">
+                <button
+                  onClick={() => setTrustBadges(trustBadges.filter((_, j) => j !== i))}
+                  className="absolute top-3 right-3 text-red-400 hover:text-red-600"
+                >
+                  <Trash2 size={16} />
+                </button>
+                <div className="grid md:grid-cols-[140px_1fr] gap-4">
+                  <label className="block">
+                    <span className="text-xs font-bold text-neutral-500 uppercase">Icono</span>
+                    <select
+                      value={b.icon}
+                      onChange={(e) => {
+                        const next = [...trustBadges];
+                        next[i] = { ...b, icon: e.target.value };
+                        setTrustBadges(next);
+                      }}
+                      className="input mt-1.5"
+                    >
+                      {ICON_OPTIONS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="space-y-2">
+                    <TextField
+                      label="Título"
+                      value={b.title}
+                      onChange={(v) => {
+                        const next = [...trustBadges];
+                        next[i] = { ...b, title: v };
+                        setTrustBadges(next);
+                      }}
+                    />
+                    <TextAreaField
+                      label="Descripción"
+                      rows={2}
+                      value={b.desc}
+                      onChange={(v) => {
+                        const next = [...trustBadges];
+                        next[i] = { ...b, desc: v };
+                        setTrustBadges(next);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => setTrustBadges([...trustBadges, { icon: "shield", title: "Nuevo sello de confianza", desc: "" }])}
+            className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-brand"
+          >
+            <Plus size={16} /> Agregar sello
+          </button>
+        </Card>
+      )}
+
+      {tab === "ubicacion" && (
+        <Card>
+          <p className="text-xs text-neutral-500 mb-4">
+            El mapa se genera automáticamente a partir de la dirección — no necesitas configurar nada más. Sube una
+            foto de cada sede (bodega, oficina, camión) para que se vea más real.
+          </p>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="font-bold text-navy text-sm mb-3">Sede Cúcuta</h3>
+              <TextField label="Dirección" value={addrCucuta} onChange={setAddrCucuta} />
+              <div className="mt-3">
+                <ImageUploader label="Foto de la sede" value={cucutaImage} onChange={setCucutaImage} aspect="aspect-video" />
+              </div>
+            </div>
+            <div>
+              <h3 className="font-bold text-navy text-sm mb-3">Sede Medellín</h3>
+              <TextField label="Dirección" value={addrMedellin} onChange={setAddrMedellin} />
+              <div className="mt-3">
+                <ImageUploader label="Foto de la sede" value={medellinImage} onChange={setMedellinImage} aspect="aspect-video" />
+              </div>
+            </div>
+          </div>
         </Card>
       )}
 
@@ -321,6 +437,53 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
             className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-brand"
           >
             <Plus size={16} /> Agregar testimonio
+          </button>
+        </Card>
+      )}
+
+      {tab === "preguntas" && (
+        <Card>
+          <p className="text-xs text-neutral-500 mb-4">
+            Preguntas frecuentes que generan confianza antes de contratar (garantías, cobertura, precios, daños, etc.)
+          </p>
+          <div className="space-y-4">
+            {faq.map((f, i) => (
+              <div key={i} className="rounded-xl border border-neutral-200 p-4 relative">
+                <button
+                  onClick={() => setFaq(faq.filter((_, j) => j !== i))}
+                  className="absolute top-3 right-3 text-red-400 hover:text-red-600"
+                >
+                  <Trash2 size={16} />
+                </button>
+                <TextField
+                  label="Pregunta"
+                  value={f.question}
+                  onChange={(v) => {
+                    const next = [...faq];
+                    next[i] = { ...f, question: v };
+                    setFaq(next);
+                  }}
+                />
+                <div className="mt-3">
+                  <TextAreaField
+                    label="Respuesta"
+                    rows={3}
+                    value={f.answer}
+                    onChange={(v) => {
+                      const next = [...faq];
+                      next[i] = { ...f, answer: v };
+                      setFaq(next);
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => setFaq([...faq, { question: "Nueva pregunta", answer: "" }])}
+            className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-brand"
+          >
+            <Plus size={16} /> Agregar pregunta
           </button>
         </Card>
       )}

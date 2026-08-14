@@ -44,9 +44,13 @@ export type SiteContent = {
   heroSubtitle: string;
   heroImage: string;
   gallery: { src: string; caption: string }[];
-  services: { title: string; desc: string; icon: string }[];
+  services: { title: string; desc: string; icon: string; image: string }[];
   testimonials: { name: string; city: string; text: string; rating: number }[];
   stats: { years: string; moves: string; cities: string; rating: string };
+  trustBadges: { icon: string; title: string; desc: string }[];
+  faq: { question: string; answer: string }[];
+  locationCucutaImage: string;
+  locationMedellinImage: string;
 };
 
 export function getSiteContent(): SiteContent {
@@ -64,5 +68,9 @@ export function getSiteContent(): SiteContent {
     services: getJSONSetting("services", []),
     testimonials: getJSONSetting("testimonials", []),
     stats: getJSONSetting("stats", { years: "10", moves: "3500", cities: "32", rating: "4.9" }),
+    trustBadges: getJSONSetting("trust_badges", []),
+    faq: getJSONSetting("faq", []),
+    locationCucutaImage: getSetting("location.cucuta_image", ""),
+    locationMedellinImage: getSetting("location.medellin_image", ""),
   };
 }

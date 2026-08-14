@@ -4,10 +4,13 @@ import { useState } from "react";
 import type { SiteContent } from "@/lib/settings";
 import Header from "./Header";
 import Hero from "./Hero";
+import TrustBadges from "./TrustBadges";
 import Services from "./Services";
 import HowItWorks from "./HowItWorks";
+import Location from "./Location";
 import Gallery from "./Gallery";
 import Testimonials from "./Testimonials";
+import FAQ from "./FAQ";
 import TrackingTeaser from "./TrackingTeaser";
 import CTASection from "./CTASection";
 import Footer from "./Footer";
@@ -32,10 +35,19 @@ export default function LandingClient({ content }: { content: SiteContent }) {
           stats={content.stats}
           onOpenQuote={() => setQuoteOpen(true)}
         />
+        <TrustBadges badges={content.trustBadges} />
         <Services services={content.services} />
         <HowItWorks />
+        <Location
+          addressCucuta={content.address_cucuta}
+          addressMedellin={content.address_medellin}
+          cucutaImage={content.locationCucutaImage}
+          medellinImage={content.locationMedellinImage}
+          phoneDisplay={content.phone_display}
+        />
         <Gallery images={content.gallery} />
         <Testimonials testimonials={content.testimonials} />
+        <FAQ items={content.faq} />
         <TrackingTeaser />
         <CTASection whatsappHref={whatsappHref} onOpenQuote={() => setQuoteOpen(true)} />
       </main>
