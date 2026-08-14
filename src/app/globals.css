@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0a1128;
+  --brand: #1157e0;
+  --brand-dark: #0a3ba8;
+  --brand-light: #4d8dff;
+  --navy: #0a1128;
+  --navy-soft: #101a35;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-light: var(--brand-light);
+  --color-navy: var(--navy);
+  --color-navy-soft: var(--navy-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+.container-page {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--brand);
+  color: white;
+  font-weight: 600;
+  padding: 0.85rem 1.75rem;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 10px 30px -10px rgba(17, 87, 224, 0.6);
+}
+.btn-primary:hover {
+  background: var(--brand-dark);
+  transform: translateY(-2px);
+}
+
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: #25d366;
+  color: white;
+  font-weight: 600;
+  padding: 0.85rem 1.75rem;
+  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: 0 10px 30px -10px rgba(37, 211, 102, 0.6);
+}
+.btn-whatsapp:hover {
+  background: #1eb958;
+  transform: translateY(-2px);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  color: white;
+  font-weight: 600;
+  padding: 0.85rem 1.75rem;
+  transition: all 0.15s ease;
+}
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float {
+  animation: float-slow 5s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.7s ease both;
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #4d8dff, #8ab4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+::selection {
+  background: var(--brand);
+  color: white;
+}
