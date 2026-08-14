@@ -16,7 +16,7 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
   return (
     <section
       id="inicio"
-      className="relative min-h-[92vh] flex items-center overflow-hidden bg-navy"
+      className="relative min-h-[100svh] sm:min-h-[92vh] flex items-center overflow-hidden bg-navy"
     >
       <div className="absolute inset-0">
         {image ? (
@@ -34,7 +34,7 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
         <div className="absolute inset-0 bg-gradient-to-b from-navy/70 via-navy/80 to-navy" />
       </div>
 
-      <div className="container-page relative z-10 py-32 lg:py-40">
+      <div className="container-page relative z-10 py-28 sm:py-32 lg:py-40">
         <div className="max-w-3xl animate-fade-in-up">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 text-white/90 text-xs font-semibold px-4 py-2 mb-6 backdrop-blur">
             <Truck size={14} className="text-brand-light" />

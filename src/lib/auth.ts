@@ -45,17 +45,19 @@ export async function isAdminAuthenticated() {
   }
 }
 
-export function verifyAdminPassword(password: string) {
-  const row = db.prepare("SELECT value FROM settings WHERE key = 'admin_password_hash'").get() as
-    | { value: string }
-    | undefined;
+export async function verifyAdminPassword(password: string) {
+  const row = await db
+    .prepare("SELECT value FROM settings WHERE key = 'admin_password_hash'")
+    .get<{ value: string }>();
   if (!row) return false;
   return bcrypt.compareSync(password, row.value);
 }
 
-export function setAdminPassword(newPassword: string) {
+export async function setAdminPassword(newPassword: string) {
   const hash = bcrypt.hashSync(newPassword, 10);
-  db.prepare("INSERT INTO settings (key, value) VALUES ('admin_password_hash', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(
-    hash
-  );
+  await db
+    .prepare(
+      "INSERT INTO settings (key, value) VALUES ('admin_password_hash', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+    )
+    .run(hash);
 }

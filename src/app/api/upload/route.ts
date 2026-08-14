@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import path from "path";
-import fs from "fs";
 import { isAdminAuthenticated } from "@/lib/auth";
-import { UPLOAD_DIR, ensureDir } from "@/lib/storage";
+import { saveUploadedFile } from "@/lib/storage";
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"]);
@@ -33,12 +31,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "La imagen supera el tamaño máximo de 10MB" }, { status: 400 });
   }
 
-  ensureDir(UPLOAD_DIR);
-
   const ext = EXT_BY_TYPE[file.type] ?? "";
   const filename = `${uuidv4()}${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
-  fs.writeFileSync(path.join(/* turbopackIgnore: true */ UPLOAD_DIR, filename), buffer);
+  const url = await saveUploadedFile(buffer, filename, file.type);
 
-  return NextResponse.json({ url: `/api/files/${filename}` });
+  return NextResponse.json({ url });
 }

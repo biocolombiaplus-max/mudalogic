@@ -20,7 +20,7 @@ export default function TrackingTeaser() {
   }
 
   return (
-    <section id="rastreo" className="py-24 bg-navy relative overflow-hidden">
+    <section id="rastreo" className="py-14 sm:py-20 lg:py-24 bg-navy relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(77,141,255,0.18),transparent_45%)]" />
       <div className="container-page relative">
         <div className="max-w-4xl mx-auto rounded-3xl bg-gradient-to-br from-white/10 to-white/[0.03] border border-white/10 backdrop-blur p-10 sm:p-14 text-center">

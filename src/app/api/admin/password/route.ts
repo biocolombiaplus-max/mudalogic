@@ -9,13 +9,13 @@ export async function POST(req: NextRequest) {
   const current = String(body.current ?? "");
   const next = String(body.next ?? "");
 
-  if (!verifyAdminPassword(current)) {
+  if (!(await verifyAdminPassword(current))) {
     return NextResponse.json({ error: "La contraseña actual no es correcta" }, { status: 400 });
   }
   if (next.length < 4) {
     return NextResponse.json({ error: "La nueva contraseña debe tener al menos 4 caracteres" }, { status: 400 });
   }
 
-  setAdminPassword(next);
+  await setAdminPassword(next);
   return NextResponse.json({ ok: true });
 }

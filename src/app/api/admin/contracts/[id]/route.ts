@@ -34,10 +34,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (updates.length === 0) {
     return NextResponse.json({ error: "Nada que actualizar" }, { status: 400 });
   }
-  updates.push("updated_at = datetime('now')");
+  updates.push("updated_at = NOW()");
   values.push(id);
 
-  db.prepare(`UPDATE contracts SET ${updates.join(", ")} WHERE id = ?`).run(...values);
+  await db.prepare(`UPDATE contracts SET ${updates.join(", ")} WHERE id = ?`).run(...values);
   return NextResponse.json({ ok: true });
 }
 
@@ -46,6 +46,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const { id } = await params;
-  db.prepare("DELETE FROM contracts WHERE id = ?").run(id);
+  await db.prepare("DELETE FROM contracts WHERE id = ?").run(id);
   return NextResponse.json({ ok: true });
 }

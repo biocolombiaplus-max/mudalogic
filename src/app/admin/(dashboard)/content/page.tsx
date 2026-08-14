@@ -3,8 +3,8 @@ import ContentEditor from "@/components/admin/ContentEditor";
 
 export const dynamic = "force-dynamic";
 
-export default function ContentPage() {
-  const content = getSiteContent();
+export default async function ContentPage() {
+  const content = await getSiteContent();
   return (
     <div>
       <h1 className="text-2xl font-extrabold text-navy">Contenido del sitio</h1>

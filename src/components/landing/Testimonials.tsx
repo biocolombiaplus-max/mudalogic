@@ -5,7 +5,7 @@ type T = { name: string; city: string; text: string; rating: number };
 
 export default function Testimonials({ testimonials }: { testimonials: T[] }) {
   return (
-    <section id="testimonios" className="py-24 bg-neutral-50">
+    <section id="testimonios" className="py-14 sm:py-20 lg:py-24 bg-white">
       <div className="container-page">
         <SectionHeading
           eyebrow="Testimonios"

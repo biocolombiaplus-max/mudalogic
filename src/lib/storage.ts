@@ -1,21 +1,31 @@
 import path from "path";
-import os from "os";
 import fs from "fs";
 
-// On Vercel (and other read-only serverless filesystems) only /tmp is
-// writable, and it does not persist between invocations/deploys. Locally,
-// or on a host with a persistent disk (VPS, Railway, Render, etc.), we use
-// real project folders so data survives restarts.
-const IS_SERVERLESS = Boolean(process.env.VERCEL);
-
-export const DATA_DIR = IS_SERVERLESS
-  ? path.join(os.tmpdir(), "mudalogic-data")
-  : path.join(process.cwd(), "data");
-
-export const UPLOAD_DIR = IS_SERVERLESS
-  ? path.join(os.tmpdir(), "mudalogic-uploads")
-  : path.join(process.cwd(), "public", "uploads");
+// Local-disk fallback used only when Vercel Blob isn't configured (e.g. local
+// dev). On Vercel itself this directory is read-only/ephemeral, so uploads
+// there always go through Blob storage instead — see saveUploadedFile below.
+export const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 
 export function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+export async function saveUploadedFile(
+  buffer: Buffer,
+  filename: string,
+  contentType: string
+): Promise<string> {
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const { put } = await import("@vercel/blob");
+    const blob = await put(filename, buffer, {
+      access: "public",
+      contentType,
+      addRandomSuffix: false,
+    });
+    return blob.url;
+  }
+
+  ensureDir(UPLOAD_DIR);
+  fs.writeFileSync(path.join(/* turbopackIgnore: true */ UPLOAD_DIR, filename), buffer);
+  return `/api/files/${filename}`;
 }

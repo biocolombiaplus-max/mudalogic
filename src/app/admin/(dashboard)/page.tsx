@@ -4,23 +4,21 @@ import { Users, FileSignature, Truck, PackageCheck, Plus, ArrowRight } from "luc
 
 export const dynamic = "force-dynamic";
 
-export default function AdminHome() {
-  const totalLeads = (db.prepare("SELECT COUNT(*) c FROM leads").get() as { c: number }).c;
-  const newLeads = (
-    db.prepare("SELECT COUNT(*) c FROM leads WHERE status = 'nuevo' OR status IS NULL").get() as {
-      c: number;
-    }
-  ).c;
-  const totalContracts = (db.prepare("SELECT COUNT(*) c FROM contracts").get() as { c: number }).c;
-  const activeContracts = (
+export default async function AdminHome() {
+  const [totalLeadsRow, newLeadsRow, totalContractsRow, activeContractsRow, recentLeads] = await Promise.all([
+    db.prepare("SELECT COUNT(*)::int c FROM leads").get<{ c: number }>(),
+    db.prepare("SELECT COUNT(*)::int c FROM leads WHERE status = 'nuevo' OR status IS NULL").get<{ c: number }>(),
+    db.prepare("SELECT COUNT(*)::int c FROM contracts").get<{ c: number }>(),
     db
-      .prepare("SELECT COUNT(*) c FROM contracts WHERE status IN ('en_transito','recogido','en_ruta')")
-      .get() as { c: number }
-  ).c;
+      .prepare("SELECT COUNT(*)::int c FROM contracts WHERE status IN ('en_transito','recogido','en_ruta')")
+      .get<{ c: number }>(),
+    db.prepare("SELECT * FROM leads ORDER BY created_at DESC LIMIT 5").all<Record<string, string>>(),
+  ]);
 
-  const recentLeads = db
-    .prepare("SELECT * FROM leads ORDER BY created_at DESC LIMIT 5")
-    .all() as Record<string, string>[];
+  const totalLeads = totalLeadsRow?.c ?? 0;
+  const newLeads = newLeadsRow?.c ?? 0;
+  const totalContracts = totalContractsRow?.c ?? 0;
+  const activeContracts = activeContractsRow?.c ?? 0;
 
   return (
     <div>

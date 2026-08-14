@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const status = String(body.status ?? "").slice(0, 40);
   if (!status) return NextResponse.json({ error: "Estado requerido" }, { status: 400 });
 
-  db.prepare("UPDATE leads SET status = ? WHERE id = ?").run(status, id);
+  await db.prepare("UPDATE leads SET status = ? WHERE id = ?").run(status, id);
   return NextResponse.json({ ok: true });
 }
 
@@ -20,6 +20,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const { id } = await params;
-  db.prepare("DELETE FROM leads WHERE id = ?").run(id);
+  await db.prepare("DELETE FROM leads WHERE id = ?").run(id);
   return NextResponse.json({ ok: true });
 }

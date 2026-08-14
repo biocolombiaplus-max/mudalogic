@@ -12,7 +12,7 @@ export default function FAQ({ items }: { items: Item[] }) {
   if (!items || items.length === 0) return null;
 
   return (
-    <section id="preguntas" className="py-24 bg-white">
+    <section id="preguntas" className="py-14 sm:py-20 lg:py-24 bg-neutral-50">
       <div className="container-page max-w-3xl">
         <SectionHeading eyebrow="Preguntas frecuentes" title="Todo lo que quieres saber antes de contratar" />
 

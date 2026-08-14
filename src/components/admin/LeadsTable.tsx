@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, Trash2, Search } from "lucide-react";
+import { MessageCircle, Trash2, Search, UserPlus, PenLine } from "lucide-react";
 import type { Lead } from "@/lib/types";
+import NewLeadModal from "./NewLeadModal";
 
 const STATUSES = [
   { value: "nuevo", label: "Nuevo", color: "bg-amber-100 text-amber-700" },
@@ -19,6 +20,7 @@ export default function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
   const [leads, setLeads] = useState(initialLeads);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("todos");
+  const [modalOpen, setModalOpen] = useState(false);
 
   async function updateStatus(id: string, status: string) {
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)));
@@ -59,7 +61,7 @@ export default function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
             className="pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 text-sm w-72 max-w-full focus:outline-none focus:ring-2 focus:ring-brand"
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
           <FilterChip active={filter === "todos"} onClick={() => setFilter("todos")}>
             Todos ({leads.length})
           </FilterChip>
@@ -68,6 +70,9 @@ export default function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
               {s.label}
             </FilterChip>
           ))}
+          <button onClick={() => setModalOpen(true)} className="btn-primary !py-2.5 !px-4 text-sm ml-1">
+            <UserPlus size={16} /> Nueva cotización
+          </button>
         </div>
       </div>
 
@@ -91,7 +96,17 @@ export default function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                 return (
                   <tr key={l.id} className="hover:bg-neutral-50">
                     <td className="px-5 py-4">
-                      <p className="font-semibold text-navy">{l.name || "Sin nombre"}</p>
+                      <p className="font-semibold text-navy flex items-center gap-1.5">
+                        {l.name || "Sin nombre"}
+                        {l.source === "manual" && (
+                          <span
+                            title="Agregada manualmente por el equipo"
+                            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-brand bg-brand/10 rounded-full px-2 py-0.5"
+                          >
+                            <PenLine size={10} /> Manual
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-neutral-500">{l.phone}</p>
                     </td>
                     <td className="px-5 py-4 text-neutral-600">
@@ -146,6 +161,12 @@ export default function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
           </p>
         )}
       </div>
+
+      <NewLeadModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={(lead) => setLeads((prev) => [lead, ...prev])}
+      />
     </div>
   );
 }

@@ -42,24 +42,33 @@ datos, nunca en texto plano.
 
 ### Variables de entorno
 
-Copia `.env.local` (ya incluido para desarrollo) y define `ADMIN_SESSION_SECRET`
-con un valor propio y secreto antes de desplegar a producción — se usa para
-firmar la sesión del panel administrativo.
+Copia `.env.local` (ya incluido para desarrollo) y define:
+
+- `ADMIN_SESSION_SECRET`: valor propio y secreto antes de desplegar a
+  producción — firma la sesión del panel administrativo.
+- `POSTGRES_URL` (o `DATABASE_URL`): cadena de conexión a una base de datos
+  Postgres. En local puede apuntar a un Postgres propio; en Vercel se llena
+  automáticamente al agregar el storage "Postgres" del proyecto.
+- `BLOB_READ_WRITE_TOKEN` (opcional en local, recomendado en producción): se
+  llena automáticamente al agregar el storage "Blob" en Vercel. Sin este
+  token las imágenes se guardan en disco local (`public/uploads/`), lo cual
+  solo sirve para desarrollo.
 
 ## Datos y almacenamiento
 
-Este proyecto usa **SQLite** (`better-sqlite3`) con el archivo de base de
-datos en `data/mudalogic.db` (se crea automáticamente y no se versiona en
-git). Las imágenes subidas desde el panel se guardan en `public/uploads/`.
+Este proyecto usa **Postgres** para todos los datos (cotizaciones, contratos,
+inventario, rastreo, contenido del sitio) y **Vercel Blob** para las imágenes
+subidas desde el panel. Esto es necesario porque en hosting serverless (como
+Vercel) cada solicitud puede atenderla una instancia distinta sin disco
+compartido — guardar datos en un archivo local (SQLite) o en `public/uploads/`
+se pierde o directamente falla entre una petición y otra.
 
-Esto significa que el hosting debe tener **disco persistente** (por ejemplo un
-VPS, Railway, Render, un contenedor con volumen, etc.). Si se despliega en una
-plataforma serverless típica (como Vercel en su modo por defecto), el disco no
-persiste entre despliegues y se perderían los datos — en ese caso habría que
-migrar a una base de datos gestionada (Postgres/Turso/etc.) y a
-almacenamiento de imágenes en la nube (S3, Cloudinary, etc.).
+Para que el proyecto funcione en Vercel solo hace falta agregar, desde el
+dashboard del proyecto → **Storage**, un almacenamiento **Postgres** y uno
+**Blob** (ambos con capa gratuita) — las variables de entorno quedan
+configuradas automáticamente, sin tocar código.
 
 ## Stack
 
-Next.js 16 (App Router) + TypeScript + Tailwind CSS 4 + SQLite + JWT (jose)
-para sesión de administrador + Lucide para iconos.
+Next.js 16 (App Router) + TypeScript + Tailwind CSS 4 + Postgres (`pg`) +
+Vercel Blob + JWT (jose) para sesión de administrador + Lucide para iconos.

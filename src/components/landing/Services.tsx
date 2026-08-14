@@ -6,7 +6,7 @@ type Service = { title: string; desc: string; icon: string; image?: string };
 
 export default function Services({ services }: { services: Service[] }) {
   return (
-    <section id="servicios" className="py-24 bg-white">
+    <section id="servicios" className="py-14 sm:py-20 lg:py-24 bg-white">
       <div className="container-page">
         <SectionHeading
           eyebrow="Nuestros servicios"

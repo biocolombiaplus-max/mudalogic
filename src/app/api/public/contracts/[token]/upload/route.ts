@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import path from "path";
-import fs from "fs";
 import db from "@/lib/db";
-import { UPLOAD_DIR, ensureDir } from "@/lib/storage";
+import { saveUploadedFile } from "@/lib/storage";
 
 const MAX_SIZE = 8 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -16,9 +14,9 @@ const EXT_BY_TYPE: Record<string, string> = {
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const contract = db.prepare("SELECT id, client_signature FROM contracts WHERE token = ?").get(
-    token.toUpperCase()
-  ) as Record<string, unknown> | undefined;
+  const contract = await db
+    .prepare("SELECT id, client_signature FROM contracts WHERE token = ?")
+    .get<Record<string, unknown>>(token.toUpperCase());
   if (!contract) return NextResponse.json({ error: "Contrato no encontrado" }, { status: 404 });
   if (contract.client_signature) {
     return NextResponse.json({ error: "El inventario ya fue firmado y no se puede modificar" }, { status: 409 });
@@ -36,11 +34,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return NextResponse.json({ error: "La imagen supera el tamaño máximo de 8MB" }, { status: 400 });
   }
 
-  ensureDir(UPLOAD_DIR);
   const ext = EXT_BY_TYPE[file.type] ?? "";
   const filename = `${uuidv4()}${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
-  fs.writeFileSync(path.join(/* turbopackIgnore: true */ UPLOAD_DIR, filename), buffer);
+  const url = await saveUploadedFile(buffer, filename, file.type);
 
-  return NextResponse.json({ url: `/api/files/${filename}` });
+  return NextResponse.json({ url });
 }

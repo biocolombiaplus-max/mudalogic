@@ -8,7 +8,7 @@ export default function CTASection({
   onOpenQuote: () => void;
 }) {
   return (
-    <section className="py-20 bg-gradient-to-br from-brand to-brand-dark relative overflow-hidden">
+    <section className="py-14 sm:py-16 lg:py-20 bg-gradient-to-br from-brand to-brand-dark relative overflow-hidden">
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_10%_10%,white,transparent_35%)]" />
       <div className="container-page relative text-center">
         <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight max-w-2xl mx-auto">

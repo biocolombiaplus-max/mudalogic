@@ -4,8 +4,8 @@ import type { Lead } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default function LeadsPage() {
-  const leads = db.prepare("SELECT * FROM leads ORDER BY created_at DESC").all() as Lead[];
+export default async function LeadsPage() {
+  const leads = await db.prepare("SELECT * FROM leads ORDER BY created_at DESC").all<Lead>();
 
   return (
     <div>

@@ -9,7 +9,7 @@ export default function Gallery({ images }: { images: Img[] }) {
   if (items.length === 0) return null;
 
   return (
-    <section id="galeria" className="py-24 bg-white">
+    <section id="galeria" className="py-14 sm:py-20 lg:py-24 bg-white">
       <div className="container-page">
         <SectionHeading
           eyebrow="Galería"

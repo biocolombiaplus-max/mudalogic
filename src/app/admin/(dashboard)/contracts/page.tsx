@@ -6,8 +6,8 @@ import { Plus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default function ContractsPage() {
-  const contracts = db.prepare("SELECT * FROM contracts ORDER BY created_at DESC").all() as Contract[];
+export default async function ContractsPage() {
+  const contracts = await db.prepare("SELECT * FROM contracts ORDER BY created_at DESC").all<Contract>();
 
   return (
     <div>

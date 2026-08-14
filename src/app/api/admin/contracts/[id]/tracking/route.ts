@@ -13,9 +13,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!status) return NextResponse.json({ error: "Estado requerido" }, { status: 400 });
 
   const eventId = uuidv4();
-  db.prepare(
-    `INSERT INTO tracking_events (id, contract_id, status, note, location) VALUES (?, ?, ?, ?, ?)`
-  ).run(eventId, id, status, String(body.note ?? "").slice(0, 500), String(body.location ?? "").slice(0, 200));
+  await db
+    .prepare(`INSERT INTO tracking_events (id, contract_id, status, note, location) VALUES (?, ?, ?, ?, ?)`)
+    .run(eventId, id, status, String(body.note ?? "").slice(0, 500), String(body.location ?? "").slice(0, 200));
 
   const contractStatusMap: Record<string, string> = {
     recogido: "recogido",
@@ -26,10 +26,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     entregado: "entregado",
   };
   if (contractStatusMap[status]) {
-    db.prepare("UPDATE contracts SET status = ?, updated_at = datetime('now') WHERE id = ?").run(
-      contractStatusMap[status],
-      id
-    );
+    await db
+      .prepare("UPDATE contracts SET status = ?, updated_at = NOW() WHERE id = ?")
+      .run(contractStatusMap[status], id);
   }
 
   return NextResponse.json({ ok: true, id: eventId });
@@ -43,6 +42,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { searchParams } = new URL(req.url);
   const eventId = searchParams.get("eventId");
   if (!eventId) return NextResponse.json({ error: "eventId requerido" }, { status: 400 });
-  db.prepare("DELETE FROM tracking_events WHERE id = ?").run(eventId);
+  await db.prepare("DELETE FROM tracking_events WHERE id = ?").run(eventId);
   return NextResponse.json({ ok: true });
 }

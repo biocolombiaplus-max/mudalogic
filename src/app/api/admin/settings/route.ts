@@ -6,7 +6,7 @@ export async function GET() {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
-  return NextResponse.json({ settings: getAllSettings() });
+  return NextResponse.json({ settings: await getAllSettings() });
 }
 
 export async function PUT(req: NextRequest) {
@@ -18,11 +18,11 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
 
-  for (const [key, value] of Object.entries(body)) {
-    if (typeof value === "string") {
-      setSetting(key, value.slice(0, 20000));
-    }
-  }
+  await Promise.all(
+    Object.entries(body)
+      .filter((entry): entry is [string, string] => typeof entry[1] === "string")
+      .map(([key, value]) => setSetting(key, value.slice(0, 20000)))
+  );
 
   return NextResponse.json({ ok: true });
 }

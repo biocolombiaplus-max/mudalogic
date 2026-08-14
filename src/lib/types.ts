@@ -9,6 +9,7 @@ export type Lead = {
   moving_date: string;
   message: string;
   status: string;
+  source: string;
   created_at: string;
 };
 

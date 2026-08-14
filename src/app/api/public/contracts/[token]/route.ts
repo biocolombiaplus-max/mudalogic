@@ -13,30 +13,26 @@ const CLIENT_EDITABLE_FIELDS = [
 ];
 
 function getContractByToken(token: string) {
-  return db.prepare("SELECT * FROM contracts WHERE token = ?").get(token) as
-    | Record<string, unknown>
-    | undefined;
+  return db.prepare("SELECT * FROM contracts WHERE token = ?").get<Record<string, unknown>>(token);
 }
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const contract = getContractByToken(token.toUpperCase());
+  const contract = await getContractByToken(token.toUpperCase());
   if (!contract) {
     return NextResponse.json({ error: "Contrato no encontrado" }, { status: 404 });
   }
-  const inventory = db
-    .prepare("SELECT * FROM inventory_items WHERE contract_id = ? ORDER BY created_at ASC")
-    .all(contract.id as string);
-  const tracking = db
-    .prepare("SELECT * FROM tracking_events WHERE contract_id = ? ORDER BY created_at ASC")
-    .all(contract.id as string);
+  const [inventory, tracking] = await Promise.all([
+    db.prepare("SELECT * FROM inventory_items WHERE contract_id = ? ORDER BY created_at ASC").all(contract.id as string),
+    db.prepare("SELECT * FROM tracking_events WHERE contract_id = ? ORDER BY created_at ASC").all(contract.id as string),
+  ]);
 
   return NextResponse.json({ contract, inventory, tracking });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const contract = getContractByToken(token.toUpperCase());
+  const contract = await getContractByToken(token.toUpperCase());
   if (!contract) {
     return NextResponse.json({ error: "Contrato no encontrado" }, { status: 404 });
   }
@@ -59,11 +55,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ to
   }
 
   if (body.client_signature) {
-    updates.push("client_signature = ?", "client_signed_at = datetime('now')", "client_signed_name = ?");
+    updates.push("client_signature = ?", "client_signed_at = NOW()", "client_signed_name = ?");
     values.push(String(body.client_signature), String(body.client_signed_name ?? contract.client_name ?? "").slice(0, 200));
   }
   if (body.staff_signature) {
-    updates.push("staff_signature = ?", "staff_signed_at = datetime('now')", "staff_signed_name = ?");
+    updates.push("staff_signature = ?", "staff_signed_at = NOW()", "staff_signed_name = ?");
     values.push(String(body.staff_signature), String(body.staff_signed_name ?? "").slice(0, 200));
   }
 
@@ -77,10 +73,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ to
     updates.push("status = 'firmado'");
   }
 
-  updates.push("updated_at = datetime('now')");
+  updates.push("updated_at = NOW()");
   values.push(contract.id as string);
 
-  db.prepare(`UPDATE contracts SET ${updates.join(", ")} WHERE id = ?`).run(...values);
+  await db.prepare(`UPDATE contracts SET ${updates.join(", ")} WHERE id = ?`).run(...values);
 
   return NextResponse.json({ ok: true });
 }

@@ -1,257 +1,314 @@
-import Database from "better-sqlite3";
-import path from "path";
+import { Pool } from "pg";
 import bcrypt from "bcryptjs";
-import { DATA_DIR, ensureDir } from "@/lib/storage";
 
-ensureDir(DATA_DIR);
-
-const DB_PATH = path.join(DATA_DIR, "mudalogic.db");
+function getConnectionString(): string {
+  const url =
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    "";
+  if (!url) {
+    throw new Error(
+      "No hay una base de datos configurada. Define POSTGRES_URL (o DATABASE_URL) apuntando a una base de datos Postgres — por ejemplo, agregando 'Postgres' desde Storage en el dashboard de Vercel."
+    );
+  }
+  return url;
+}
 
 declare global {
   // eslint-disable-next-line no-var
-  var __mudalogicDb: Database.Database | undefined;
+  var __mudalogicPool: Pool | undefined;
 }
 
-function createConnection() {
-  const db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
-  return db;
+function createPool() {
+  const connectionString = getConnectionString();
+  const needsSSL =
+    Boolean(process.env.VERCEL) ||
+    /sslmode=require|neon\.tech|vercel-storage\.com/i.test(connectionString);
+  return new Pool({
+    connectionString,
+    ssl: needsSSL ? { rejectUnauthorized: false } : undefined,
+    max: 5,
+  });
 }
 
-export const db = global.__mudalogicDb ?? createConnection();
-if (process.env.NODE_ENV !== "production") global.__mudalogicDb = db;
+const pool = global.__mudalogicPool ?? createPool();
+if (process.env.NODE_ENV !== "production") global.__mudalogicPool = pool;
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS settings (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL
-);
+function toPgSql(sql: string): string {
+  let i = 0;
+  return sql.replace(/\?/g, () => `$${++i}`);
+}
 
-CREATE TABLE IF NOT EXISTS leads (
-  id TEXT PRIMARY KEY,
-  name TEXT,
-  phone TEXT,
-  origin TEXT,
-  destination TEXT,
-  moving_size TEXT,
-  items TEXT,
-  moving_date TEXT,
-  message TEXT,
-  status TEXT DEFAULT 'nuevo',
-  created_at TEXT DEFAULT (datetime('now'))
-);
+class Statement {
+  constructor(private sql: string) {}
 
-CREATE TABLE IF NOT EXISTS contracts (
-  id TEXT PRIMARY KEY,
-  token TEXT UNIQUE NOT NULL,
-  status TEXT DEFAULT 'borrador',
-  client_name TEXT,
-  client_doc TEXT,
-  client_phone TEXT,
-  client_email TEXT,
-  origin_address TEXT,
-  destination_address TEXT,
-  moving_date TEXT,
-  service_type TEXT,
-  price TEXT,
-  notes TEXT,
-  client_signature TEXT,
-  client_signed_at TEXT,
-  client_signed_name TEXT,
-  staff_signature TEXT,
-  staff_signed_at TEXT,
-  staff_signed_name TEXT,
-  created_by TEXT,
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
-);
+  async get<T = Record<string, unknown>>(...params: unknown[]): Promise<T | undefined> {
+    await ensureInit();
+    const res = await pool.query(toPgSql(this.sql), params);
+    return res.rows[0] as T | undefined;
+  }
 
-CREATE TABLE IF NOT EXISTS inventory_items (
-  id TEXT PRIMARY KEY,
-  contract_id TEXT NOT NULL,
-  name TEXT,
-  category TEXT,
-  quantity INTEGER DEFAULT 1,
-  condition TEXT,
-  photo TEXT,
-  created_at TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
-);
+  async all<T = Record<string, unknown>>(...params: unknown[]): Promise<T[]> {
+    await ensureInit();
+    const res = await pool.query(toPgSql(this.sql), params);
+    return res.rows as T[];
+  }
 
-CREATE TABLE IF NOT EXISTS tracking_events (
-  id TEXT PRIMARY KEY,
-  contract_id TEXT NOT NULL,
-  status TEXT NOT NULL,
-  note TEXT,
-  location TEXT,
-  created_at TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
-);
-`);
-
-function seedDefault(key: string, value: string) {
-  const exists = db.prepare("SELECT 1 FROM settings WHERE key = ?").get(key);
-  if (!exists) {
-    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run(key, value);
+  async run(...params: unknown[]): Promise<{ changes: number }> {
+    await ensureInit();
+    const res = await pool.query(toPgSql(this.sql), params);
+    return { changes: res.rowCount ?? 0 };
   }
 }
 
-seedDefault("admin_password_hash", bcrypt.hashSync("Mudalogic2026", 10));
-seedDefault("site.phone_display", "313 847 0094");
-seedDefault("site.whatsapp", "573138470094");
-seedDefault("site.email", "mudalogic.adm@gmail.com");
-seedDefault("site.address_cucuta", "Calle 33 #11-5, Cúcuta, Norte de Santander");
-seedDefault("site.address_medellin", "Medellín, Antioquia");
-seedDefault("site.logo", "");
-seedDefault("hero.title", "Mudanzas sin estrés, solo sonrisas");
-seedDefault(
-  "hero.subtitle",
-  "Especialistas en mudanzas y trasteos nacionales. Empacamos, transportamos y desempacamos por ti — desde Cúcuta y Medellín hacia todo el país."
-);
-seedDefault("hero.image", "");
-seedDefault(
-  "gallery.images",
-  JSON.stringify([
-    { src: "", caption: "Empaque profesional" },
-    { src: "", caption: "Cargue seguro" },
-    { src: "", caption: "Entrega con una sonrisa" },
-  ])
-);
-seedDefault(
-  "services",
-  JSON.stringify([
-    {
-      title: "Empaque y desempaque total",
-      desc: "Llegamos con todo el material de embalaje, empacamos cada objeto desde cero y lo desempacamos en tu nuevo hogar u oficina.",
-      icon: "box",
-      image: "",
-    },
-    {
-      title: "Mudanzas nacionales puerta a puerta",
-      desc: "Desde Cúcuta y Medellín hacia cualquier ciudad de Colombia, con seguimiento en tiempo real de tu mudanza.",
-      icon: "truck",
-      image: "",
-    },
-    {
-      title: "Mejores precios del mercado",
-      desc: "Cotización clara y justa, sin sorpresas ni cobros ocultos. Seriedad, calidad y oportunidad.",
-      icon: "price",
-      image: "",
-    },
-    {
-      title: "Inventario y contrato digital",
-      desc: "Firmamos contigo un contrato de servicio con inventario fotográfico y firma digital, para tu tranquilidad.",
-      icon: "doc",
-      image: "",
-    },
-    {
-      title: "Rastreo de tu mudanza",
-      desc: "Sigue el estado de tu mudanza en tiempo real desde que sale hasta que llega a su destino.",
-      icon: "map",
-      image: "",
-    },
-    {
-      title: "Personal capacitado",
-      desc: "Equipo profesional, uniformado y con experiencia en manejo de carga, electrodomésticos y objetos frágiles.",
-      icon: "team",
-      image: "",
-    },
-  ])
-);
-seedDefault(
-  "testimonials",
-  JSON.stringify([
-    {
-      name: "Laura M.",
-      city: "Cúcuta → Bogotá",
-      text: "Empacaron todo desde cero, nada se dañó y llegó justo a tiempo. Excelente servicio.",
-      rating: 5,
-    },
-    {
-      name: "Carlos R.",
-      city: "Medellín → Cali",
-      text: "El mejor precio que encontré y pude ver en tiempo real dónde iba mi mudanza. Muy recomendados.",
-      rating: 5,
-    },
-    {
-      name: "Familia Pérez",
-      city: "Cúcuta → Medellín",
-      text: "Muy serios y puntuales. El contrato digital nos dio mucha confianza desde el primer momento.",
-      rating: 5,
-    },
-  ])
-);
-seedDefault("stats.years", "10");
-seedDefault("stats.moves", "3500");
-seedDefault("stats.cities", "32");
-seedDefault("stats.rating", "4.9");
-seedDefault(
-  "trust_badges",
-  JSON.stringify([
-    {
-      icon: "shield",
-      title: "Seguro de carga incluido",
-      desc: "Tus bienes viajan protegidos durante todo el trayecto.",
-    },
-    {
-      icon: "badge",
-      title: "Personal verificado",
-      desc: "Equipo propio, uniformado e identificado, no contratistas externos.",
-    },
-    {
-      icon: "doc",
-      title: "Contrato con firma digital",
-      desc: "Todo queda por escrito, con inventario fotográfico y firmas de ambas partes.",
-    },
-    {
-      icon: "map",
-      title: "Rastreo en tiempo real",
-      desc: "Sabes en todo momento dónde va tu mudanza, sin llamadas ni incertidumbre.",
-    },
-  ])
-);
-seedDefault(
-  "faq",
-  JSON.stringify([
-    {
-      question: "¿Qué incluye el servicio de mudanza?",
-      answer:
-        "Incluye empaque de todos tus bienes desde cero, material de embalaje, cargue, transporte, descargue y desempaque en el destino. Tú solo indicas qué se muda y nosotros nos encargamos del resto.",
-    },
-    {
-      question: "¿Cómo se calcula el precio?",
-      answer:
-        "El precio depende del tamaño de la mudanza, la distancia entre origen y destino y si necesitas servicios adicionales. Cotiza gratis por WhatsApp y te damos un valor claro, sin cobros ocultos.",
-    },
-    {
-      question: "¿Qué pasa si algo se daña durante el transporte?",
-      answer:
-        "Tu mudanza cuenta con seguro de carga y además queda registrada en un inventario fotográfico firmado por ambas partes antes de salir, lo que nos permite responder con seriedad ante cualquier eventualidad.",
-    },
-    {
-      question: "¿Hacen mudanzas a cualquier ciudad de Colombia?",
-      answer:
-        "Sí. Operamos desde nuestras sedes en Cúcuta y Medellín hacia todas las ciudades y municipios del país.",
-    },
-    {
-      question: "¿Cómo puedo rastrear mi mudanza?",
-      answer:
-        "Al firmar tu contrato recibes un código de rastreo único. Con ese código puedes consultar el estado de tu mudanza en tiempo real desde la sección \"Rastrear mudanza\" de esta página.",
-    },
-  ])
-);
-seedDefault("location.cucuta_image", "");
-seedDefault("location.medellin_image", "");
+const db = {
+  prepare(sql: string) {
+    return new Statement(sql);
+  },
+};
 
-export function generateTrackingCode(): string {
+let initPromise: Promise<void> | null = null;
+
+function ensureInit(): Promise<void> {
+  if (!initPromise) initPromise = doInit();
+  return initPromise;
+}
+
+async function seedDefault(key: string, value: string) {
+  const exists = await pool.query("SELECT 1 FROM settings WHERE key = $1", [key]);
+  if (exists.rowCount === 0) {
+    await pool.query("INSERT INTO settings (key, value) VALUES ($1, $2)", [key, value]);
+  }
+}
+
+async function doInit() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS leads (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      phone TEXT,
+      origin TEXT,
+      destination TEXT,
+      moving_size TEXT,
+      items TEXT,
+      moving_date TEXT,
+      message TEXT,
+      status TEXT DEFAULT 'nuevo',
+      source TEXT DEFAULT 'landing',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS contracts (
+      id TEXT PRIMARY KEY,
+      token TEXT UNIQUE NOT NULL,
+      status TEXT DEFAULT 'borrador',
+      client_name TEXT,
+      client_doc TEXT,
+      client_phone TEXT,
+      client_email TEXT,
+      origin_address TEXT,
+      destination_address TEXT,
+      moving_date TEXT,
+      service_type TEXT,
+      price TEXT,
+      notes TEXT,
+      client_signature TEXT,
+      client_signed_at TIMESTAMPTZ,
+      client_signed_name TEXT,
+      staff_signature TEXT,
+      staff_signed_at TIMESTAMPTZ,
+      staff_signed_name TEXT,
+      created_by TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS inventory_items (
+      id TEXT PRIMARY KEY,
+      contract_id TEXT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      name TEXT,
+      category TEXT,
+      quantity INTEGER DEFAULT 1,
+      condition TEXT,
+      photo TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS tracking_events (
+      id TEXT PRIMARY KEY,
+      contract_id TEXT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      status TEXT NOT NULL,
+      note TEXT,
+      location TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+  await seedDefault("admin_password_hash", bcrypt.hashSync("Mudalogic2026", 10));
+  await seedDefault("site.phone_display", "313 847 0094");
+  await seedDefault("site.whatsapp", "573138470094");
+  await seedDefault("site.email", "mudalogic.adm@gmail.com");
+  await seedDefault("site.address_cucuta", "Calle 33 #11-5, Cúcuta, Norte de Santander");
+  await seedDefault("site.address_medellin", "Medellín, Antioquia");
+  await seedDefault("site.logo", "");
+  await seedDefault("hero.title", "Mudanzas sin estrés, solo sonrisas");
+  await seedDefault(
+    "hero.subtitle",
+    "Especialistas en mudanzas y trasteos nacionales. Empacamos, transportamos y desempacamos por ti — desde Cúcuta y Medellín hacia todo el país."
+  );
+  await seedDefault("hero.image", "");
+  await seedDefault(
+    "gallery.images",
+    JSON.stringify([
+      { src: "", caption: "Empaque profesional" },
+      { src: "", caption: "Cargue seguro" },
+      { src: "", caption: "Entrega con una sonrisa" },
+    ])
+  );
+  await seedDefault(
+    "services",
+    JSON.stringify([
+      {
+        title: "Empaque y desempaque total",
+        desc: "Llegamos con todo el material de embalaje, empacamos cada objeto desde cero y lo desempacamos en tu nuevo hogar u oficina.",
+        icon: "box",
+        image: "",
+      },
+      {
+        title: "Mudanzas nacionales puerta a puerta",
+        desc: "Desde Cúcuta y Medellín hacia cualquier ciudad de Colombia, con seguimiento en tiempo real de tu mudanza.",
+        icon: "truck",
+        image: "",
+      },
+      {
+        title: "Mejores precios del mercado",
+        desc: "Cotización clara y justa, sin sorpresas ni cobros ocultos. Seriedad, calidad y oportunidad.",
+        icon: "price",
+        image: "",
+      },
+      {
+        title: "Inventario y contrato digital",
+        desc: "Firmamos contigo un contrato de servicio con inventario fotográfico y firma digital, para tu tranquilidad.",
+        icon: "doc",
+        image: "",
+      },
+      {
+        title: "Rastreo de tu mudanza",
+        desc: "Sigue el estado de tu mudanza en tiempo real desde que sale hasta que llega a su destino.",
+        icon: "map",
+        image: "",
+      },
+      {
+        title: "Personal capacitado",
+        desc: "Equipo profesional, uniformado y con experiencia en manejo de carga, electrodomésticos y objetos frágiles.",
+        icon: "team",
+        image: "",
+      },
+    ])
+  );
+  await seedDefault(
+    "testimonials",
+    JSON.stringify([
+      {
+        name: "Laura M.",
+        city: "Cúcuta → Bogotá",
+        text: "Empacaron todo desde cero, nada se dañó y llegó justo a tiempo. Excelente servicio.",
+        rating: 5,
+      },
+      {
+        name: "Carlos R.",
+        city: "Medellín → Cali",
+        text: "El mejor precio que encontré y pude ver en tiempo real dónde iba mi mudanza. Muy recomendados.",
+        rating: 5,
+      },
+      {
+        name: "Familia Pérez",
+        city: "Cúcuta → Medellín",
+        text: "Muy serios y puntuales. El contrato digital nos dio mucha confianza desde el primer momento.",
+        rating: 5,
+      },
+    ])
+  );
+  await seedDefault("stats.years", "10");
+  await seedDefault("stats.moves", "3500");
+  await seedDefault("stats.cities", "32");
+  await seedDefault("stats.rating", "4.9");
+  await seedDefault(
+    "trust_badges",
+    JSON.stringify([
+      {
+        icon: "shield",
+        title: "Seguro de carga incluido",
+        desc: "Tus bienes viajan protegidos durante todo el trayecto.",
+      },
+      {
+        icon: "badge",
+        title: "Personal verificado",
+        desc: "Equipo propio, uniformado e identificado, no contratistas externos.",
+      },
+      {
+        icon: "doc",
+        title: "Contrato con firma digital",
+        desc: "Todo queda por escrito, con inventario fotográfico y firmas de ambas partes.",
+      },
+      {
+        icon: "map",
+        title: "Rastreo en tiempo real",
+        desc: "Sabes en todo momento dónde va tu mudanza, sin llamadas ni incertidumbre.",
+      },
+    ])
+  );
+  await seedDefault(
+    "faq",
+    JSON.stringify([
+      {
+        question: "¿Qué incluye el servicio de mudanza?",
+        answer:
+          "Incluye empaque de todos tus bienes desde cero, material de embalaje, cargue, transporte, descargue y desempaque en el destino. Tú solo indicas qué se muda y nosotros nos encargamos del resto.",
+      },
+      {
+        question: "¿Cómo se calcula el precio?",
+        answer:
+          "El precio depende del tamaño de la mudanza, la distancia entre origen y destino y si necesitas servicios adicionales. Cotiza gratis por WhatsApp y te damos un valor claro, sin cobros ocultos.",
+      },
+      {
+        question: "¿Qué pasa si algo se daña durante el transporte?",
+        answer:
+          "Tu mudanza cuenta con seguro de carga y además queda registrada en un inventario fotográfico firmado por ambas partes antes de salir, lo que nos permite responder con seriedad ante cualquier eventualidad.",
+      },
+      {
+        question: "¿Hacen mudanzas a cualquier ciudad de Colombia?",
+        answer:
+          "Sí. Operamos desde nuestras sedes en Cúcuta y Medellín hacia todas las ciudades y municipios del país.",
+      },
+      {
+        question: "¿Cómo puedo rastrear mi mudanza?",
+        answer:
+          'Al firmar tu contrato recibes un código de rastreo único. Con ese código puedes consultar el estado de tu mudanza en tiempo real desde la sección "Rastrear mudanza" de esta página.',
+      },
+    ])
+  );
+  await seedDefault("location.cucuta_image", "");
+  await seedDefault("location.medellin_image", "");
+}
+
+export async function generateTrackingCode(): Promise<string> {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
   for (let i = 0; i < 6; i++) {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
   const full = `ML-${code}`;
-  const exists = db.prepare("SELECT 1 FROM contracts WHERE token = ?").get(full);
-  return exists ? generateTrackingCode() : full;
+  await ensureInit();
+  const exists = await pool.query("SELECT 1 FROM contracts WHERE token = $1", [full]);
+  return (exists.rowCount ?? 0) > 0 ? generateTrackingCode() : full;
 }
 
 export default db;
