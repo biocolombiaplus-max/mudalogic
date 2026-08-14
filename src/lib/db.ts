@@ -1,10 +1,9 @@
 import Database from "better-sqlite3";
 import path from "path";
-import fs from "fs";
 import bcrypt from "bcryptjs";
+import { DATA_DIR, ensureDir } from "@/lib/storage";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+ensureDir(DATA_DIR);
 
 const DB_PATH = path.join(DATA_DIR, "mudalogic.db");
 

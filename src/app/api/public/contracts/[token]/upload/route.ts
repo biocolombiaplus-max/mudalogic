@@ -3,8 +3,8 @@ import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import fs from "fs";
 import db from "@/lib/db";
+import { UPLOAD_DIR, ensureDir } from "@/lib/storage";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const MAX_SIZE = 8 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const EXT_BY_TYPE: Record<string, string> = {
@@ -36,11 +36,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return NextResponse.json({ error: "La imagen supera el tamaño máximo de 8MB" }, { status: 400 });
   }
 
-  if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  ensureDir(UPLOAD_DIR);
   const ext = EXT_BY_TYPE[file.type] ?? "";
   const filename = `${uuidv4()}${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
-  fs.writeFileSync(path.join(UPLOAD_DIR, filename), buffer);
+  fs.writeFileSync(path.join(/* turbopackIgnore: true */ UPLOAD_DIR, filename), buffer);
 
-  return NextResponse.json({ url: `/uploads/${filename}` });
+  return NextResponse.json({ url: `/api/files/${filename}` });
 }
