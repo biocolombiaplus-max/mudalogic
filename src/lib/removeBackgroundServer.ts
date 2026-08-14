@@ -1,10 +1,12 @@
 import sharp from "sharp";
 
 /**
- * Server-side equivalent of removeBackground.ts — makes the near-uniform
- * background of a logo transparent by sampling the corner color and
- * clearing pixels close to it, with a soft-edge falloff. Used to reprocess
- * an already-uploaded logo without requiring the admin to re-upload it.
+ * Server-side logo processor: makes the near-uniform background transparent
+ * (sampling the corner color, with a soft-edge falloff) and turns dark,
+ * low-saturation pixels (black/gray text like a tagline) white so the logo
+ * reads clearly on the dark navy header — while leaving saturated colors
+ * (like a blue brand mark) untouched. Used to reprocess an already-uploaded
+ * logo without requiring the admin to re-upload it.
  */
 export async function removeFlatBackgroundServer(input: Buffer, threshold = 28): Promise<Buffer> {
   const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -43,5 +45,30 @@ export async function removeFlatBackgroundServer(input: Buffer, threshold = 28):
     }
   }
 
+  whitenDarkGrayscalePixels(data, channels);
+
   return sharp(data, { raw: { width, height, channels } }).png().toBuffer();
+}
+
+/**
+ * Turns dark, low-saturation (grayscale-ish) pixels white in place — e.g.
+ * black or gray logo text — while leaving saturated colors (a blue brand
+ * mark, etc.) unchanged. Skips fully transparent pixels.
+ */
+function whitenDarkGrayscalePixels(data: Buffer | Uint8Array, channels: number, chromaMax = 42, lightnessMax = 170) {
+  for (let i = 0; i < data.length; i += channels) {
+    if (channels > 3 && data[i + 3] === 0) continue;
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const chroma = max - min;
+    const lightness = (max + min) / 2;
+    if (chroma < chromaMax && lightness < lightnessMax) {
+      data[i] = 255;
+      data[i + 1] = 255;
+      data[i + 2] = 255;
+    }
+  }
 }

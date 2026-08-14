@@ -129,7 +129,7 @@ export default function ImageUploader({
             className="rounded"
           />
           <Wand2 size={13} className="text-brand" />
-          Quitar fondo automáticamente (recomendado si tu logo tiene fondo blanco o gris)
+          Optimizar para fondo oscuro (quita el fondo y pone en blanco el texto negro/gris)
         </label>
       )}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

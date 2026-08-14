@@ -8,9 +8,33 @@ function loadImage(file: File): Promise<HTMLImageElement> {
 }
 
 /**
- * Makes the near-uniform background of a logo transparent by sampling the
- * corner color and clearing pixels close to it, with a soft-edge falloff so
- * anti-aliased edges don't get a hard cutout look.
+ * Turns dark, low-saturation (grayscale-ish) pixels white in place — e.g.
+ * black or gray logo text — while leaving saturated colors (a blue brand
+ * mark, etc.) unchanged. Skips fully transparent pixels.
+ */
+function whitenDarkGrayscalePixels(data: Uint8ClampedArray, chromaMax = 42, lightnessMax = 170) {
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] === 0) continue;
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const chroma = max - min;
+    const lightness = (max + min) / 2;
+    if (chroma < chromaMax && lightness < lightnessMax) {
+      data[i] = 255;
+      data[i + 1] = 255;
+      data[i + 2] = 255;
+    }
+  }
+}
+
+/**
+ * Logo processor: makes the near-uniform background transparent by sampling
+ * the corner color and clearing pixels close to it, with a soft-edge
+ * falloff so anti-aliased edges don't get a hard cutout look — then turns
+ * dark/gray text white so it reads clearly on a dark header.
  */
 export async function removeFlatBackground(file: File, threshold = 28): Promise<File> {
   const img = await loadImage(file);
@@ -57,6 +81,8 @@ export async function removeFlatBackground(file: File, threshold = 28): Promise<
       data[i + 3] = Math.round(data[i + 3] * alpha);
     }
   }
+
+  whitenDarkGrayscalePixels(data);
 
   ctx.putImageData(imageData, 0, 0);
 

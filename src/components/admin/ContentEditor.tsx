@@ -176,7 +176,7 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
                   className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-brand disabled:opacity-60"
                 >
                   {fixingLogo ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
-                  {fixingLogo ? "Quitando fondo..." : "Quitar fondo del logo actual"}
+                  {fixingLogo ? "Optimizando..." : "Optimizar logo actual para fondo oscuro"}
                 </button>
               )}
               {fixLogoError && <p className="mt-1 text-xs text-red-600">{fixLogoError}</p>}
