@@ -15,6 +15,7 @@ import {
   MapPin,
   ShieldCheck,
   HelpCircle,
+  AlertTriangle,
 } from "lucide-react";
 import type { SiteContent } from "@/lib/settings";
 import { ICON_OPTIONS } from "@/lib/icon-map";
@@ -55,10 +56,12 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSave() {
     setSaving(true);
     setSaved(false);
+    setError("");
     const payload = {
       "site.logo": logo,
       "site.phone_display": phone,
@@ -81,14 +84,27 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
       testimonials: JSON.stringify(testimonials),
       faq: JSON.stringify(faq),
     };
-    await fetch("/api/admin/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Error del servidor (${res.status})`);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? `No se pudo guardar: ${e.message}`
+          : "No se pudo guardar. Revisa tu conexión e intenta de nuevo."
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -113,6 +129,11 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
             {saving ? "Guardando..." : saved ? "Guardado" : "Guardar cambios"}
           </button>
         </div>
+        {error && (
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-red-600 font-medium">
+            <AlertTriangle size={15} /> {error}
+          </p>
+        )}
       </div>
 
       {tab === "general" && (
