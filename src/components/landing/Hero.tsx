@@ -35,7 +35,7 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
       </div>
 
       <div className="container-page relative z-10 py-28 sm:py-32 lg:py-40">
-        <div className="max-w-3xl animate-fade-in-up">
+        <div className="max-w-3xl mx-auto sm:mx-0 flex flex-col items-center sm:items-start text-center sm:text-left animate-fade-in-up">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 text-white/90 text-xs font-semibold px-4 py-2 mb-6 backdrop-blur">
             <Truck size={14} className="text-brand-light" />
             Mudanzas nacionales · Cúcuta &amp; Medellín para toda Colombia
@@ -49,7 +49,7 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
             {subtitle}
           </p>
 
-          <div className="mt-9 flex flex-wrap items-center gap-4">
+          <div className="mt-9 flex flex-wrap items-center justify-center sm:justify-start gap-4">
             <button onClick={onOpenQuote} className="btn-primary text-base">
               Cotiza tu mudanza gratis <ArrowRight size={18} />
             </button>
@@ -58,7 +58,7 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
             </a>
           </div>
 
-          <div className="mt-12 flex flex-wrap gap-x-10 gap-y-5">
+          <div className="mt-12 flex flex-wrap justify-center sm:justify-start gap-x-10 gap-y-5">
             <Stat value={`${stats.years}+`} label="años de experiencia" />
             <Stat value={`${Number(stats.moves).toLocaleString("es-CO")}+`} label="mudanzas realizadas" />
             <Stat value={stats.cities} label="ciudades cubiertas" />
@@ -73,8 +73,8 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
             </div>
           </div>
 
-          <div className="mt-8 flex items-center gap-2 text-white/70 text-sm">
-            <ShieldCheck size={18} className="text-brand-light" />
+          <div className="mt-8 flex items-center justify-center sm:justify-start gap-2 text-white/70 text-sm">
+            <ShieldCheck size={18} className="text-brand-light shrink-0" />
             Empaque y desempaque incluido · Contrato digital · Rastreo en tiempo real
           </div>
         </div>

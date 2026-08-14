@@ -139,7 +139,15 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
       {tab === "general" && (
         <Card>
           <div className="grid md:grid-cols-2 gap-6">
-            <ImageUploader value={logo} onChange={setLogo} label="Logo (fondo transparente recomendado)" aspect="aspect-[3/1]" />
+            <ImageUploader
+              value={logo}
+              onChange={setLogo}
+              label="Logo"
+              aspect="aspect-[3/1]"
+              fit="contain"
+              allowBgRemoval
+              transparentPreview
+            />
             <div className="space-y-4">
               <TextField label="Teléfono para mostrar" value={phone} onChange={setPhone} placeholder="313 847 0094" />
               <TextField

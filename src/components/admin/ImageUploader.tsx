@@ -2,26 +2,42 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { Upload, Loader2, ImageOff, Trash2 } from "lucide-react";
+import { Upload, Loader2, ImageOff, Trash2, Wand2 } from "lucide-react";
+import { removeFlatBackground } from "@/lib/removeBackground";
 
 type Props = {
   value: string;
   onChange: (url: string) => void;
   label?: string;
   aspect?: string;
+  fit?: "cover" | "contain";
+  /** Shows a "remove flat background" toggle — use for logos on a solid background. */
+  allowBgRemoval?: boolean;
+  /** Renders the preview on a checkerboard pattern so transparency is visible. */
+  transparentPreview?: boolean;
 };
 
-export default function ImageUploader({ value, onChange, label, aspect = "aspect-video" }: Props) {
+export default function ImageUploader({
+  value,
+  onChange,
+  label,
+  aspect = "aspect-video",
+  fit = "cover",
+  allowBgRemoval = false,
+  transparentPreview = false,
+}: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [removeBg, setRemoveBg] = useState(allowBgRemoval);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
     setError("");
     setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
     try {
+      const processed = allowBgRemoval && removeBg ? await removeFlatBackground(file) : file;
+      const fd = new FormData();
+      fd.append("file", processed);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al subir imagen");
@@ -39,11 +55,30 @@ export default function ImageUploader({ value, onChange, label, aspect = "aspect
         <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">{label}</span>
       )}
       <div
-        className={`mt-1.5 relative ${aspect} w-full rounded-xl border-2 border-dashed border-neutral-200 bg-neutral-50 overflow-hidden group cursor-pointer hover:border-brand/50 transition-colors`}
+        className={`mt-1.5 relative ${aspect} w-full rounded-xl border-2 border-dashed border-neutral-200 overflow-hidden group cursor-pointer hover:border-brand/50 transition-colors ${
+          transparentPreview && value ? "" : "bg-neutral-50"
+        }`}
+        style={
+          transparentPreview && value
+            ? {
+                backgroundImage:
+                  "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)",
+                backgroundSize: "16px 16px",
+                backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+                backgroundColor: "#0a1128",
+              }
+            : undefined
+        }
         onClick={() => inputRef.current?.click()}
       >
         {value ? (
-          <Image src={value} alt={label ?? "imagen"} fill unoptimized className="object-cover" />
+          <Image
+            src={value}
+            alt={label ?? "imagen"}
+            fill
+            unoptimized
+            className={fit === "contain" ? "object-contain p-2" : "object-cover"}
+          />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-neutral-400 gap-1.5">
             <ImageOff size={22} />
@@ -85,6 +120,18 @@ export default function ImageUploader({ value, onChange, label, aspect = "aspect
           e.target.value = "";
         }}
       />
+      {allowBgRemoval && (
+        <label className="mt-2 flex items-center gap-1.5 text-xs text-neutral-500 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={removeBg}
+            onChange={(e) => setRemoveBg(e.target.checked)}
+            className="rounded"
+          />
+          <Wand2 size={13} className="text-brand" />
+          Quitar fondo automáticamente (recomendado si tu logo tiene fondo blanco o gris)
+        </label>
+      )}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );

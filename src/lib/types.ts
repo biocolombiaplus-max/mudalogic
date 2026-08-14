@@ -13,6 +13,14 @@ export type Lead = {
   created_at: string;
 };
 
+export type LeadFollowup = {
+  id: string;
+  lead_id: string;
+  type: "manual" | "reminder_8" | "reminder_15";
+  note: string | null;
+  created_at: string;
+};
+
 export type Contract = {
   id: string;
   token: string;

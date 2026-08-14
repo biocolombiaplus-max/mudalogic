@@ -149,6 +149,14 @@ async function doInit() {
       location TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS lead_followups (
+      id TEXT PRIMARY KEY,
+      lead_id TEXT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      note TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
 
   await seedDefault("admin_password_hash", bcrypt.hashSync("Mudalogic2026", 10));
@@ -297,6 +305,18 @@ async function doInit() {
   );
   await seedDefault("location.cucuta_image", "");
   await seedDefault("location.medellin_image", "");
+  await seedDefault(
+    "remarketing.msg_8",
+    "Hola {nombre} 👋, somos de MudaLogic. Hace unos días nos escribiste por tu mudanza de {origen} a {destino}. ¿Sigues necesitando el servicio? Con gusto te ayudamos a coordinarla, con la seriedad y los mejores precios del mercado. Cuéntanos en qué vamos 🚚"
+  );
+  await seedDefault(
+    "remarketing.msg_15",
+    "Hola {nombre}, te escribimos de MudaLogic 🚚 ¿ya resolviste tu mudanza? Si aún la tienes pendiente, seguimos con disponibilidad y la mejor oferta para ti. Escríbenos y te cotizamos de una vez."
+  );
+  await seedDefault(
+    "remarketing.msg_general",
+    "Hola {nombre}, te saluda el equipo de MudaLogic. Vimos tu solicitud de mudanza de {origen} a {destino} y queremos ayudarte a coordinarla. ¿Tienes unos minutos para conversar?"
+  );
 }
 
 export async function generateTrackingCode(): Promise<string> {

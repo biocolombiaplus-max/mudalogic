@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MessageCircle, Trash2, Search, UserPlus, PenLine } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import NewLeadModal from "./NewLeadModal";
+import ContactLeadModal from "./ContactLeadModal";
+
+function fillTemplate(tpl: string, lead: Lead) {
+  return tpl
+    .replaceAll("{nombre}", lead.name || "el cliente")
+    .replaceAll("{origen}", lead.origin || "tu origen")
+    .replaceAll("{destino}", lead.destination || "tu destino");
+}
 
 const STATUSES = [
   { value: "nuevo", label: "Nuevo", color: "bg-amber-100 text-amber-700" },
@@ -21,6 +29,14 @@ export default function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("todos");
   const [modalOpen, setModalOpen] = useState(false);
+  const [contactLead, setContactLead] = useState<Lead | null>(null);
+  const [generalTemplate, setGeneralTemplate] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((r) => r.json())
+      .then((data) => setGeneralTemplate(data.settings?.["remarketing.msg_general"] || ""));
+  }, []);
 
   async function updateStatus(id: string, status: string) {
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)));
@@ -92,7 +108,6 @@ export default function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
             <tbody className="divide-y divide-black/5">
               {filtered.map((l) => {
                 const meta = statusMeta(l.status || "nuevo");
-                const waHref = `https://wa.me/57${(l.phone || "").replace(/\D/g, "").replace(/^57/, "")}`;
                 return (
                   <tr key={l.id} className="hover:bg-neutral-50">
                     <td className="px-5 py-4">
@@ -131,15 +146,13 @@ export default function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <a
-                          href={waHref}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          onClick={() => setContactLead(l)}
                           className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100"
                           title="Escribir por WhatsApp"
                         >
                           <MessageCircle size={16} />
-                        </a>
+                        </button>
                         <button
                           onClick={() => remove(l.id)}
                           className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"
@@ -167,6 +180,16 @@ export default function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
         onClose={() => setModalOpen(false)}
         onCreated={(lead) => setLeads((prev) => [lead, ...prev])}
       />
+
+      {contactLead && (
+        <ContactLeadModal
+          lead={contactLead}
+          type="manual"
+          initialMessage={fillTemplate(generalTemplate, contactLead)}
+          onClose={() => setContactLead(null)}
+          onSent={() => {}}
+        />
+      )}
     </div>
   );
 }

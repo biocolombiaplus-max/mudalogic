@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Menu, X, Phone, MapPin } from "lucide-react";
+import { Menu, X, Phone, MapPin, ChevronRight } from "lucide-react";
 
 type Props = {
   logo: string;
@@ -33,19 +33,20 @@ export default function Header({ logo, phoneDisplay, onOpenQuote }: Props) {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-navy/95 backdrop-blur shadow-lg shadow-black/20" : "bg-transparent"
+        scrolled || open ? "bg-navy/95 backdrop-blur shadow-lg shadow-black/20" : "bg-transparent"
       }`}
     >
-      <div className="container-page flex items-center justify-between py-3">
+      <div className="relative z-40 container-page flex items-center justify-between py-3">
         <a href="#inicio" className="flex items-center gap-2 shrink-0">
           {logo ? (
             <Image
               src={logo}
               alt="MudaLogic"
-              width={160}
-              height={44}
-              className="h-9 w-auto object-contain"
+              width={220}
+              height={64}
+              className="h-12 sm:h-14 w-auto object-contain"
               unoptimized
+              priority
             />
           ) : (
             <span className="text-2xl font-extrabold tracking-tight text-white">
@@ -84,33 +85,46 @@ export default function Header({ logo, phoneDisplay, onOpenQuote }: Props) {
       </div>
 
       {open && (
-        <div className="lg:hidden bg-navy border-t border-white/10">
-          <div className="container-page py-4 flex flex-col gap-4">
+        <div
+          className="lg:hidden fixed inset-0 z-30 bg-navy/60 backdrop-blur-[2px]"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {open && (
+        <div className="lg:hidden absolute top-full left-0 right-0 z-50 bg-navy border-t border-white/10 rounded-b-2xl shadow-2xl shadow-black/40 overflow-hidden">
+          <nav className="container-page py-3 flex flex-col">
             {links.map((l) => (
               <a
                 key={l.href}
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className="text-white/90 font-medium py-1"
+                className="flex items-center justify-between gap-2 text-white/90 font-medium py-3.5 border-b border-white/[0.06] last:border-0 active:bg-white/5 rounded-lg px-2 -mx-2 transition-colors"
               >
                 {l.label}
+                <ChevronRight size={16} className="text-white/30" />
               </a>
             ))}
-            <a
-              href={`tel:+57${phoneDisplay.replace(/\s|-/g, "")}`}
-              className="flex items-center gap-2 text-white/90 font-semibold"
-            >
-              <Phone size={16} /> {phoneDisplay}
-            </a>
-            <div className="flex items-center gap-2 text-white/70 text-sm">
-              <MapPin size={16} /> Cúcuta y Medellín, para toda Colombia
+          </nav>
+
+          <div className="container-page pb-5">
+            <div className="rounded-xl bg-white/5 p-4 space-y-2.5">
+              <a
+                href={`tel:+57${phoneDisplay.replace(/\s|-/g, "")}`}
+                className="flex items-center gap-2.5 text-white font-semibold text-sm"
+              >
+                <Phone size={16} className="text-brand-light" /> {phoneDisplay}
+              </a>
+              <div className="flex items-center gap-2.5 text-white/70 text-sm">
+                <MapPin size={16} className="text-brand-light shrink-0" /> Cúcuta y Medellín, para toda Colombia
+              </div>
             </div>
             <button
               onClick={() => {
                 setOpen(false);
                 onOpenQuote();
               }}
-              className="btn-primary w-full"
+              className="btn-primary w-full mt-4"
             >
               Cotizar ahora
             </button>
