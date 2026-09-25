@@ -48,6 +48,7 @@ export type SiteContent = {
   faq: { question: string; answer: string }[];
   locationCucutaImage: string;
   locationMedellinImage: string;
+  metaPixelId: string;
 };
 
 export async function getSiteContent(): Promise<SiteContent> {
@@ -69,6 +70,7 @@ export async function getSiteContent(): Promise<SiteContent> {
     faq,
     locationCucutaImage,
     locationMedellinImage,
+    metaPixelId,
   ] = await Promise.all([
     getSetting("site.phone_display", "313 847 0094"),
     getSetting("site.whatsapp", "573138470094"),
@@ -87,6 +89,7 @@ export async function getSiteContent(): Promise<SiteContent> {
     getJSONSetting("faq", [] as SiteContent["faq"]),
     getSetting("location.cucuta_image", ""),
     getSetting("location.medellin_image", ""),
+    getSetting("pixel.meta_id", "1855842109187308"),
   ]);
 
   return {
@@ -107,5 +110,6 @@ export async function getSiteContent(): Promise<SiteContent> {
     faq,
     locationCucutaImage,
     locationMedellinImage,
+    metaPixelId,
   };
 }

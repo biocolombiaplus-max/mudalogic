@@ -16,6 +16,7 @@ import CTASection from "./CTASection";
 import Footer from "./Footer";
 import WhatsAppFloat from "./WhatsAppFloat";
 import QuoteModal from "./QuoteModal";
+import MetaPixel from "@/components/analytics/MetaPixel";
 
 export default function LandingClient({ content }: { content: SiteContent }) {
   const [quoteOpen, setQuoteOpen] = useState(false);
@@ -25,6 +26,7 @@ export default function LandingClient({ content }: { content: SiteContent }) {
 
   return (
     <>
+      <MetaPixel pixelId={content.metaPixelId} />
       <Header logo={content.logo} phoneDisplay={content.phone_display} onOpenQuote={() => setQuoteOpen(true)} />
       <main>
         <Hero

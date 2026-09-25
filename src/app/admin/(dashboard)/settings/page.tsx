@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KeyRound, CheckCircle2, MessageSquareText, Info } from "lucide-react";
+import { KeyRound, CheckCircle2, MessageSquareText, Info, BarChart3 } from "lucide-react";
 
 export default function SettingsPage() {
   return (
     <div>
       <h1 className="text-2xl font-extrabold text-navy">Configuración</h1>
       <p className="text-sm text-neutral-500 mt-1">
-        Contraseña de acceso y plantillas de mensajes de remarketing.
+        Contraseña de acceso, plantillas de mensajes de remarketing e integraciones.
       </p>
 
       <div className="mt-6 grid lg:grid-cols-2 gap-6 items-start">
         <PasswordCard />
         <TemplatesCard />
+        <PixelCard />
       </div>
     </div>
   );
@@ -198,6 +199,83 @@ function TemplatesCard() {
           <button onClick={handleSave} disabled={saving} className="btn-primary !py-2.5 text-sm w-full disabled:opacity-60">
             {saved ? <CheckCircle2 size={16} /> : null}
             {saving ? "Guardando..." : saved ? "Guardado" : "Guardar plantillas"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PixelCard() {
+  const [pixelId, setPixelId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => setPixelId(data.settings?.["pixel.meta_id"] || ""))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "pixel.meta_id": pixelId.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Error del servidor (${res.status})`);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-black/5 shadow-sm p-6">
+      <div className="flex items-center gap-2 text-brand mb-2">
+        <BarChart3 size={20} />
+        <h2 className="font-bold text-navy">Meta Pixel (Facebook / Instagram Ads)</h2>
+      </div>
+      <p className="text-xs text-neutral-500 mb-4 flex items-start gap-1.5">
+        <Info size={14} className="shrink-0 mt-0.5" />
+        Pega aquí el ID del pixel que crees en Meta Events Manager. Se activa solo en la página pública y
+        registra automáticamente <code className="bg-neutral-100 px-1 rounded">PageView</code>, un{" "}
+        <code className="bg-neutral-100 px-1 rounded">Contact</code> al tocar cualquier botón de WhatsApp, y un{" "}
+        <code className="bg-neutral-100 px-1 rounded">Lead</code> al enviar el formulario de cotización.
+      </p>
+
+      {loading ? (
+        <p className="text-sm text-neutral-400">Cargando...</p>
+      ) : (
+        <div className="space-y-4">
+          <label className="block">
+            <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">ID del Pixel</span>
+            <input
+              value={pixelId}
+              onChange={(e) => setPixelId(e.target.value)}
+              placeholder="Ej: 1234567890123456"
+              inputMode="numeric"
+              className="mt-1.5 w-full border-1.5 border-neutral-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </label>
+
+          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+
+          <button onClick={handleSave} disabled={saving} className="btn-primary !py-2.5 text-sm w-full disabled:opacity-60">
+            {saved ? <CheckCircle2 size={16} /> : null}
+            {saving ? "Guardando..." : saved ? "Guardado" : "Guardar pixel"}
           </button>
         </div>
       )}

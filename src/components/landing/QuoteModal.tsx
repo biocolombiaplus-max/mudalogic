@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, MapPin, User, Phone, CalendarDays, Boxes, Send, CheckCircle2 } from "lucide-react";
+import { trackPixelEvent } from "@/lib/pixel";
 
 type Props = {
   open: boolean;
@@ -90,6 +91,11 @@ export default function QuoteModal({ open, onClose, whatsapp }: Props) {
     } catch {
       // still proceed to WhatsApp even if lead storage fails
     }
+
+    trackPixelEvent("Lead", {
+      content_name: "Cotización de mudanza",
+      content_category: payload.moving_size,
+    });
 
     const lines = [
       `Hola MudaLogic, quiero cotizar mi mudanza:`,
