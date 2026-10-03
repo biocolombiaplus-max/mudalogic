@@ -14,6 +14,19 @@ const EDITABLE_FIELDS = [
   "price",
   "notes",
   "status",
+  "driver_name",
+  "driver_doc",
+  "driver_phone",
+  "vehicle_plate",
+  "pickup_datetime",
+  "completion_datetime",
+  "freight_value",
+  "advance_value",
+  "balance_due",
+  "policy_number",
+  "insurance_company",
+  "insured_amount",
+  "insurance_value",
 ];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

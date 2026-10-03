@@ -24,8 +24,13 @@ export async function POST(req: NextRequest) {
     .prepare(
       `INSERT INTO contracts
         (id, token, status, client_name, client_doc, client_phone, client_email,
-         origin_address, destination_address, moving_date, service_type, price, notes, created_by)
-       VALUES (?, ?, 'enviado', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         origin_address, destination_address, moving_date, service_type, price, notes,
+         driver_name, driver_doc, driver_phone, vehicle_plate,
+         pickup_datetime, completion_datetime,
+         freight_value, advance_value, balance_due,
+         policy_number, insurance_company, insured_amount, insurance_value,
+         created_by)
+       VALUES (?, ?, 'enviado', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       id,
@@ -40,6 +45,19 @@ export async function POST(req: NextRequest) {
       String(body.service_type ?? "").slice(0, 200),
       String(body.price ?? "").slice(0, 60),
       String(body.notes ?? "").slice(0, 2000),
+      String(body.driver_name ?? "").slice(0, 200),
+      String(body.driver_doc ?? "").slice(0, 60),
+      String(body.driver_phone ?? "").slice(0, 60),
+      String(body.vehicle_plate ?? "").slice(0, 30),
+      String(body.pickup_datetime ?? "").slice(0, 60),
+      String(body.completion_datetime ?? "").slice(0, 60),
+      String(body.freight_value ?? "").slice(0, 60),
+      String(body.advance_value ?? "").slice(0, 60),
+      String(body.balance_due ?? "").slice(0, 60),
+      String(body.policy_number ?? "").slice(0, 100),
+      String(body.insurance_company ?? "").slice(0, 200),
+      String(body.insured_amount ?? "").slice(0, 60),
+      String(body.insurance_value ?? "").slice(0, 60),
       "admin"
     );
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -16,8 +16,11 @@ import {
   Truck,
   Plus,
   Trash2,
+  FileDown,
+  Star,
+  Camera,
 } from "lucide-react";
-import type { Contract, InventoryItem, TrackingEvent } from "@/lib/types";
+import type { Contract, ContractPhoto, InventoryItem, TrackingEvent } from "@/lib/types";
 import { CONTRACT_STATUSES, TRACKING_STATUSES } from "@/lib/types";
 
 function statusMeta(status: string) {
@@ -28,10 +31,12 @@ export default function ContractDetail({
   contract,
   inventory,
   tracking,
+  photos,
 }: {
   contract: Contract;
   inventory: InventoryItem[];
   tracking: TrackingEvent[];
+  photos: ContractPhoto[];
 }) {
   const [form, setForm] = useState({
     client_name: contract.client_name || "",
@@ -45,6 +50,17 @@ export default function ContractDetail({
     price: contract.price || "",
     notes: contract.notes || "",
     status: contract.status,
+    driver_name: contract.driver_name || "",
+    driver_doc: contract.driver_doc || "",
+    driver_phone: contract.driver_phone || "",
+    vehicle_plate: contract.vehicle_plate || "",
+    freight_value: contract.freight_value || "",
+    advance_value: contract.advance_value || "",
+    balance_due: contract.balance_due || "",
+    policy_number: contract.policy_number || "",
+    insurance_company: contract.insurance_company || "",
+    insured_amount: contract.insured_amount || "",
+    insurance_value: contract.insurance_value || "",
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -57,9 +73,18 @@ export default function ContractDetail({
   });
   const [addingEvent, setAddingEvent] = useState(false);
 
+  const [reviewLink, setReviewLink] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => setReviewLink(data.settings?.["reviews.instagram_link"] || ""));
+  }, []);
+
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const contractUrl = `${origin}/contrato/${contract.token}`;
   const trackUrl = `${origin}/rastreo/${contract.token}`;
+  const pdfUrl = `${origin}/api/public/contracts/${contract.token}/pdf`;
 
   function update(key: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -93,6 +118,13 @@ export default function ContractDetail({
     const subject = "Tu contrato de mudanza MudaLogic";
     const body = `Hola ${contract.client_name || ""},\n\nEste es el link para completar y firmar tu contrato de mudanza:\n${contractUrl}\n\nCódigo de rastreo: ${contract.token}\n${trackUrl}\n\nGracias por confiar en MudaLogic.`;
     window.open(`mailto:${contract.client_email || ""}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
+  }
+
+  function reviewShare() {
+    const link = reviewLink || "https://instagram.com/mudalogic.co";
+    const msg = `¡Hola ${contract.client_name || ""}! 🙌 Gracias por confiar en MudaLogic para tu mudanza. Si quedaste contento con el servicio, nos ayudarías muchísimo dejando una reseña aquí: ${link}`;
+    const phone = (contract.client_phone || "").replace(/\D/g, "");
+    window.open(`https://wa.me/${phone.startsWith("57") ? phone : "57" + phone}?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
   async function addEvent() {
@@ -153,6 +185,22 @@ export default function ContractDetail({
           <button onClick={emailShare} className="p-2.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100" title="Enviar por correo">
             <Mail size={18} />
           </button>
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2.5 rounded-xl bg-navy/5 text-navy hover:bg-navy/10"
+            title="Descargar orden de servicio en PDF"
+          >
+            <FileDown size={18} />
+          </a>
+          <button
+            onClick={reviewShare}
+            className="p-2.5 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-100"
+            title="Pedir reseña en Instagram por WhatsApp"
+          >
+            <Star size={18} />
+          </button>
         </div>
       </div>
 
@@ -211,11 +259,73 @@ export default function ContractDetail({
           </button>
         </Card>
 
+        <Card title="Datos del conductor">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Nombre del conductor">
+              <input value={form.driver_name} onChange={(e) => update("driver_name", e.target.value)} className="input" />
+            </Field>
+            <Field label="Cédula del conductor">
+              <input value={form.driver_doc} onChange={(e) => update("driver_doc", e.target.value)} className="input" />
+            </Field>
+            <Field label="Teléfono del conductor">
+              <input value={form.driver_phone} onChange={(e) => update("driver_phone", e.target.value)} className="input" />
+            </Field>
+            <Field label="Placa del vehículo">
+              <input value={form.vehicle_plate} onChange={(e) => update("vehicle_plate", e.target.value)} className="input" />
+            </Field>
+          </div>
+          <p className="text-[11px] text-neutral-400 mt-3">
+            El conductor verá estos datos (sin poder editarlos) cuando entre a firmar desde el link del contrato.
+          </p>
+          <button onClick={handleSave} disabled={saving} className="btn-primary !py-2.5 text-sm mt-4 disabled:opacity-60">
+            {saved ? <Check size={16} /> : <Save size={16} />}
+            {saving ? "Guardando..." : saved ? "Guardado" : "Guardar cambios"}
+          </button>
+        </Card>
+
+        <Card title="Valores del servicio y póliza">
+          <div className="grid sm:grid-cols-3 gap-4">
+            <Field label="Valor del flete">
+              <input value={form.freight_value} onChange={(e) => update("freight_value", e.target.value)} className="input" />
+            </Field>
+            <Field label="Valor del anticipo">
+              <input value={form.advance_value} onChange={(e) => update("advance_value", e.target.value)} className="input" />
+            </Field>
+            <Field label="Saldo pendiente">
+              <input value={form.balance_due} onChange={(e) => update("balance_due", e.target.value)} className="input" />
+            </Field>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4 mt-4">
+            <Field label="Número de póliza">
+              <input value={form.policy_number} onChange={(e) => update("policy_number", e.target.value)} className="input" />
+            </Field>
+            <Field label="Aseguradora">
+              <input value={form.insurance_company} onChange={(e) => update("insurance_company", e.target.value)} className="input" />
+            </Field>
+            <Field label="Monto asegurado">
+              <input value={form.insured_amount} onChange={(e) => update("insured_amount", e.target.value)} className="input" />
+            </Field>
+            <Field label="Valor del seguro">
+              <input value={form.insurance_value} onChange={(e) => update("insurance_value", e.target.value)} className="input" />
+            </Field>
+          </div>
+          <p className="text-[11px] text-neutral-400 mt-3">
+            {contract.has_insurance
+              ? "El cliente indicó que SÍ quiere contratar seguro para esta mudanza."
+              : "El cliente aún no ha indicado si contrata seguro (lo decide al firmar)."}{" "}
+            Valor declarado de los bienes: <b>{contract.declared_value || "sin registrar"}</b>.
+          </p>
+          <button onClick={handleSave} disabled={saving} className="btn-primary !py-2.5 text-sm mt-4 disabled:opacity-60">
+            {saved ? <Check size={16} /> : <Save size={16} />}
+            {saving ? "Guardando..." : saved ? "Guardado" : "Guardar cambios"}
+          </button>
+        </Card>
+
         <div className="space-y-6">
           <Card title="Firmas">
             <div className="grid grid-cols-2 gap-4">
               <SignatureBox label="Firma del cliente" signature={contract.client_signature} name={contract.client_signed_name} date={contract.client_signed_at} />
-              <SignatureBox label="Firma de quien recoge" signature={contract.staff_signature} name={contract.staff_signed_name} date={contract.staff_signed_at} />
+              <SignatureBox label="Firma del conductor" signature={contract.staff_signature} name={contract.staff_signed_name} date={contract.staff_signed_at} />
             </div>
           </Card>
 
@@ -241,6 +351,20 @@ export default function ContractDetail({
                         {item.category} · x{item.quantity}
                       </p>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card title={`Fotos de la carga (${photos.length})`} icon={Camera}>
+            {photos.length === 0 ? (
+              <p className="text-sm text-neutral-400">El conductor aún no ha subido fotos de la carga.</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
+                {photos.map((p) => (
+                  <div key={p.id} className="relative aspect-square rounded-lg overflow-hidden border border-neutral-200 bg-neutral-100">
+                    <Image src={p.url} alt="Foto de carga" fill unoptimized className="object-cover" />
                   </div>
                 ))}
               </div>

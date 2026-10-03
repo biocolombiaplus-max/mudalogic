@@ -130,6 +130,14 @@ async function doInit() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS contract_photos (
+      id TEXT PRIMARY KEY,
+      contract_id TEXT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      url TEXT NOT NULL,
+      caption TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS inventory_items (
       id TEXT PRIMARY KEY,
       contract_id TEXT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
@@ -159,7 +167,26 @@ async function doInit() {
     );
   `);
 
+  await pool.query(`
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS driver_name TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS driver_doc TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS driver_phone TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS vehicle_plate TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS pickup_datetime TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS completion_datetime TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS freight_value TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS advance_value TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS balance_due TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS has_insurance BOOLEAN DEFAULT FALSE;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS policy_number TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS insurance_company TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS insured_amount TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS insurance_value TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS declared_value TEXT;
+  `);
+
   await seedDefault("admin_password_hash", bcrypt.hashSync("Mudalogic2026", 10));
+  await seedDefault("reviews.instagram_link", "");
   await seedDefault("site.phone_display", "313 847 0094");
   await seedDefault("site.whatsapp", "573138470094");
   await seedDefault("site.email", "mudalogic.adm@gmail.com");

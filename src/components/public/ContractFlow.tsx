@@ -23,12 +23,54 @@ import {
   CheckCircle2,
   ClipboardList,
   MapPinned,
+  ShieldCheck,
+  IdCard,
+  FileDown,
 } from "lucide-react";
 import SignaturePad from "@/components/SignaturePad";
-import type { Contract, InventoryItem } from "@/lib/types";
+import type { Contract, ContractPhoto, InventoryItem } from "@/lib/types";
 
 const CATEGORIES = ["Sala", "Habitación", "Cocina", "Electrodomésticos", "Oficina", "Cajas", "Frágil / especial", "Otro"];
 const CONDITIONS = ["Excelente", "Bueno", "Con detalles previos", "Frágil - requiere cuidado especial"];
+
+const CLAUSES: { title: string; body: string }[] = [
+  {
+    title: "1. Recepción y estado de los bienes",
+    body: "Declaras que los bienes del inventario se entregan en condiciones normales de uso, salvo lo que anotes en observaciones. Autorizas el registro fotográfico y/o en video como constancia del estado de los mismos al momento del cargue y descargue, para efectos probatorios.",
+  },
+  {
+    title: "2. Inventario declarado",
+    body: "El servicio comprende exclusivamente los bienes relacionados en el inventario que diligenciaste. Incluir elementos adicionales después generará costos extra que deberás asumir.",
+  },
+  {
+    title: "3. Dirección de entrega obligatoria",
+    body: "Te obligas a suministrar una dirección exacta, clara y completa del lugar de entrega. Si no lo haces oportunamente, autorizas a MudaLogic a custodiar temporalmente los bienes, generándose un cobro mensual por bodegaje hasta su retiro o entrega final.",
+  },
+  {
+    title: "4. Seguro de transporte de mercancía",
+    body: "Puedes contratar una póliza de seguro sobre los bienes transportados, cuyo valor asumirías directamente. Si no la contratas, aceptas que la responsabilidad de MudaLogic se limita al valor del servicio contratado, conforme a los artículos 981, 982 y concordantes del Código de Comercio.",
+  },
+  {
+    title: "5. Elementos frágiles o especiales",
+    body: "Electrodomésticos, televisores, pantallas, objetos en vidrio o similares sin su empaque original o protección especializada viajan bajo tu responsabilidad, salvo que contrates empaque técnico adicional o seguro todo riesgo.",
+  },
+  {
+    title: "6. Derecho de retención y mora",
+    body: "MudaLogic podrá retener los bienes transportados hasta el pago total del servicio. El incumplimiento en el pago genera mora automática sin necesidad de requerimiento previo (artículo 1608 del Código Civil).",
+  },
+  {
+    title: "7. Abandono de bienes",
+    body: "Si pasan sesenta (60) días calendario desde el requerimiento de retiro o entrega sin que canceles los valores pendientes ni dispongas destino de los bienes, se entenderá abandono, autorizando a MudaLogic a iniciar el trámite legal correspondiente.",
+  },
+  {
+    title: "8. Notificación electrónica",
+    body: "Autorizas que cualquier comunicación sobre este servicio se haga por llamada, SMS, WhatsApp o correo electrónico, conforme a la Ley 527 de 1999.",
+  },
+  {
+    title: "9. Domicilio contractual y aceptación",
+    body: "Las partes fijan como domicilio contractual la ciudad de Cúcuta, Norte de Santander. Al firmar, declaras haber leído, entendido y aceptado íntegramente estas condiciones, con mérito probatorio conforme a los artículos 1602 del Código Civil y 822 del Código de Comercio.",
+  },
+];
 
 type Step = "datos" | "inventario" | "firma_cliente" | "firma_staff" | "completado";
 
@@ -37,6 +79,7 @@ export default function ContractFlow({ token }: { token: string }) {
   const [notFound, setNotFound] = useState(false);
   const [contract, setContract] = useState<Contract | null>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [photos, setPhotos] = useState<ContractPhoto[]>([]);
   const [step, setStep] = useState<Step>("datos");
 
   useEffect(() => {
@@ -55,6 +98,7 @@ export default function ContractFlow({ token }: { token: string }) {
     const data = await res.json();
     setContract(data.contract);
     setInventory(data.inventory);
+    setPhotos(data.photos || []);
     if (data.contract.client_signature && data.contract.staff_signature) {
       setStep("completado");
     } else if (data.contract.client_signature) {
@@ -130,6 +174,8 @@ export default function ContractFlow({ token }: { token: string }) {
         <StepFirmaStaff
           token={token}
           contract={contract}
+          photos={photos}
+          setPhotos={setPhotos}
           onSigned={(c) => {
             setContract(c);
             setStep("completado");
@@ -137,7 +183,9 @@ export default function ContractFlow({ token }: { token: string }) {
         />
       )}
 
-      {step === "completado" && <StepCompletado token={token} contract={contract} inventory={inventory} />}
+      {step === "completado" && (
+        <StepCompletado token={token} contract={contract} inventory={inventory} photos={photos} />
+      )}
     </Shell>
   );
 }
@@ -241,6 +289,8 @@ function StepDatos({
     origin_address: contract.origin_address || "",
     destination_address: contract.destination_address || "",
     moving_date: contract.moving_date || "",
+    pickup_datetime: contract.pickup_datetime || "",
+    completion_datetime: contract.completion_datetime || "",
     notes: contract.notes || "",
   });
   const [saving, setSaving] = useState(false);
@@ -303,6 +353,24 @@ function StepDatos({
         <Field label="Fecha de la mudanza" icon={<CalendarDays size={14} />}>
           <input type="date" className="pinput" value={form.moving_date} onChange={(e) => update("moving_date", e.target.value)} />
         </Field>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Hora y fecha de recogida" icon={<CalendarDays size={14} />}>
+            <input
+              type="datetime-local"
+              className="pinput"
+              value={form.pickup_datetime}
+              onChange={(e) => update("pickup_datetime", e.target.value)}
+            />
+          </Field>
+          <Field label="Hora y fecha estimada de terminación" icon={<CalendarDays size={14} />}>
+            <input
+              type="datetime-local"
+              className="pinput"
+              value={form.completion_datetime}
+              onChange={(e) => update("completion_datetime", e.target.value)}
+            />
+          </Field>
+        </div>
         <Field label="Notas adicionales">
           <textarea className="pinput resize-none" rows={2} value={form.notes} onChange={(e) => update("notes", e.target.value)} />
         </Field>
@@ -521,6 +589,8 @@ function StepFirmaCliente({
   onSigned: (c: Contract) => void;
 }) {
   const [fullName, setFullName] = useState(contract.client_name || "");
+  const [hasInsurance, setHasInsurance] = useState(contract.has_insurance ?? false);
+  const [declaredValue, setDeclaredValue] = useState(contract.declared_value || "");
   const [accepted, setAccepted] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -533,7 +603,7 @@ function StepFirmaCliente({
       return;
     }
     if (!accepted) {
-      setError("Debes aceptar los términos del servicio");
+      setError("Debes aceptar las condiciones contractuales del servicio");
       return;
     }
     if (!signature) {
@@ -544,7 +614,12 @@ function StepFirmaCliente({
     const res = await fetch(`/api/public/contracts/${token}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client_signature: signature, client_signed_name: fullName }),
+      body: JSON.stringify({
+        client_signature: signature,
+        client_signed_name: fullName,
+        has_insurance: hasInsurance,
+        declared_value: declaredValue,
+      }),
     });
     setSaving(false);
     if (!res.ok) {
@@ -552,7 +627,13 @@ function StepFirmaCliente({
       setError(d.error || "No se pudo registrar la firma");
       return;
     }
-    onSigned({ ...contract, client_signature: signature, client_signed_name: fullName });
+    onSigned({
+      ...contract,
+      client_signature: signature,
+      client_signed_name: fullName,
+      has_insurance: hasInsurance,
+      declared_value: declaredValue,
+    });
   }
 
   return (
@@ -561,7 +642,7 @@ function StepFirmaCliente({
         <ClipboardList size={20} className="text-brand" /> Contrato de servicio
       </h1>
 
-      <div className="mt-4 rounded-xl bg-neutral-50 border border-neutral-100 p-4 text-sm text-neutral-600 leading-relaxed max-h-56 overflow-y-auto">
+      <div className="mt-4 rounded-xl bg-neutral-50 border border-neutral-100 p-4 text-sm text-neutral-600 leading-relaxed">
         <p>
           Por medio del presente documento, <strong>{fullName || "el cliente"}</strong>, identificado con documento{" "}
           {contract.client_doc || "___________"}, contrata a <strong>MudaLogic</strong> para la prestación del
@@ -571,13 +652,8 @@ function StepFirmaCliente({
         </p>
         <p className="mt-2">
           El servicio incluye empaque, cargue, transporte, descargue y desempaque de los bienes relacionados en el
-          inventario adjunto ({inventory.length} artículo{inventory.length !== 1 && "s"}), los cuales han sido
-          registrados con su respectiva condición y evidencia fotográfica.
-        </p>
-        <p className="mt-2">
-          Valor acordado del servicio: <strong>{contract.price || "a confirmar"}</strong>. MudaLogic se compromete a
-          transportar los bienes con la debida diligencia y cuidado. El cliente declara que la información del
-          inventario es correcta al momento de la firma.
+          inventario adjunto ({inventory.length} artículo{inventory.length !== 1 && "s"}), con su respectiva
+          condición y evidencia fotográfica. Valor acordado del servicio: <strong>{contract.price || "a confirmar"}</strong>.
         </p>
         {contract.notes && (
           <p className="mt-2">
@@ -586,15 +662,57 @@ function StepFirmaCliente({
         )}
       </div>
 
+      <div className="mt-4 rounded-xl border border-neutral-200 p-4 max-h-56 overflow-y-auto">
+        <p className="text-xs font-bold text-neutral-500 uppercase tracking-wide mb-2">
+          Condiciones contractuales del servicio
+        </p>
+        {CLAUSES.map((c) => (
+          <div key={c.title} className="mb-3 last:mb-0">
+            <p className="text-xs font-bold text-navy">{c.title}</p>
+            <p className="text-xs text-neutral-500 leading-relaxed mt-0.5">{c.body}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="mt-5">
         <Field label="Firma como (nombre completo)" icon={<User size={14} />}>
           <input className="pinput" value={fullName} onChange={(e) => setFullName(e.target.value)} />
         </Field>
       </div>
 
+      <div className="mt-4 rounded-xl bg-brand/5 border border-brand/15 p-4">
+        <p className="text-xs font-bold text-navy uppercase tracking-wide flex items-center gap-1.5 mb-2">
+          <ShieldCheck size={14} className="text-brand" /> Seguro de transporte
+        </p>
+        <div className="flex gap-4 text-sm text-neutral-700">
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" checked={hasInsurance} onChange={() => setHasInsurance(true)} /> Sí quiero contratar seguro
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" checked={!hasInsurance} onChange={() => setHasInsurance(false)} /> No contrato seguro
+          </label>
+        </div>
+        <div className="mt-3">
+          <Field label="Valor declarado de los bienes (opcional)">
+            <input
+              className="pinput"
+              value={declaredValue}
+              onChange={(e) => setDeclaredValue(e.target.value)}
+              placeholder="Ej: $5.000.000"
+            />
+          </Field>
+        </div>
+        {!hasInsurance && (
+          <p className="text-[11px] text-neutral-500 mt-2">
+            Al no contratar seguro, aceptas que la responsabilidad de MudaLogic se limita al valor del servicio
+            contratado (cláusula 4).
+          </p>
+        )}
+      </div>
+
       <label className="mt-4 flex items-start gap-2 text-sm text-neutral-600 cursor-pointer">
         <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-1" />
-        He revisado el inventario y acepto los términos de este contrato de servicio con MudaLogic.
+        He leído y acepto el inventario y las condiciones contractuales de este servicio con MudaLogic.
       </label>
 
       <div className="mt-4">
@@ -625,19 +743,41 @@ function StepFirmaCliente({
 function StepFirmaStaff({
   token,
   contract,
+  photos,
+  setPhotos,
   onSigned,
 }: {
   token: string;
   contract: Contract;
+  photos: ContractPhoto[];
+  setPhotos: (photos: ContractPhoto[]) => void;
   onSigned: (c: Contract) => void;
 }) {
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState("");
-  const [staffName, setStaffName] = useState("");
+  const [staffName, setStaffName] = useState(contract.driver_name || "");
   const [signature, setSignature] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  async function handlePhoto(file: File) {
+    setUploadingPhoto(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`/api/public/contracts/${token}/photos`, { method: "POST", body: fd });
+    const data = await res.json();
+    setUploadingPhoto(false);
+    if (res.ok) {
+      setPhotos([...photos, { id: data.id, contract_id: contract.id, url: data.url, caption: null, created_at: new Date().toISOString() }]);
+    }
+  }
+
+  async function removePhoto(id: string) {
+    setPhotos(photos.filter((p) => p.id !== id));
+    await fetch(`/api/public/contracts/${token}/photos/${id}`, { method: "DELETE" });
+  }
 
   async function verify() {
     setError("");
@@ -683,11 +823,11 @@ function StepFirmaStaff({
   return (
     <Card>
       <h1 className="text-xl font-extrabold text-navy flex items-center gap-2">
-        <Truck size={20} className="text-brand" /> Firma de quien recoge la mudanza
+        <Truck size={20} className="text-brand" /> Firma del conductor
       </h1>
       <p className="text-sm text-neutral-500 mt-1">
         ¡Gracias {contract.client_signed_name || contract.client_name}! Tu firma quedó registrada. Este paso lo
-        completa el transportista de MudaLogic al momento de recoger la mudanza.
+        completa el conductor de MudaLogic al momento de recoger la mudanza.
       </p>
 
       {!unlocked ? (
@@ -708,12 +848,66 @@ function StepFirmaStaff({
         </div>
       ) : (
         <div className="mt-6">
-          <Field label="Nombre de quien recoge" icon={<User size={14} />}>
+          {(contract.driver_name || contract.vehicle_plate) && (
+            <div className="rounded-xl bg-neutral-50 border border-neutral-100 p-4 mb-5">
+              <p className="text-xs font-bold text-neutral-500 uppercase tracking-wide flex items-center gap-1.5 mb-2">
+                <IdCard size={14} /> Datos del conductor registrados por MudaLogic
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-neutral-700">
+                <p><span className="text-neutral-400">Conductor:</span> {contract.driver_name || "—"}</p>
+                <p><span className="text-neutral-400">Cédula:</span> {contract.driver_doc || "—"}</p>
+                <p><span className="text-neutral-400">Placa:</span> {contract.vehicle_plate || "—"}</p>
+                <p><span className="text-neutral-400">Teléfono:</span> {contract.driver_phone || "—"}</p>
+              </div>
+            </div>
+          )}
+
+          <Field label="Confirma tu nombre" icon={<User size={14} />}>
             <input className="pinput" value={staffName} onChange={(e) => setStaffName(e.target.value)} />
           </Field>
-          <div className="mt-4">
+
+          <div className="mt-5">
             <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide flex items-center gap-1.5">
-              <PenLine size={14} /> Firma del transportista
+              <Camera size={14} /> Fotos de la carga ({photos.length})
+            </span>
+            <p className="text-xs text-neutral-400 mt-0.5 mb-2">
+              Sube fotos de cómo quedó cargado el camión — quedan como evidencia en la orden de servicio.
+            </p>
+            {photos.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {photos.map((p) => (
+                  <div key={p.id} className="relative aspect-square rounded-lg overflow-hidden border border-neutral-200 group">
+                    <Image src={p.url} alt="Foto de carga" fill unoptimized className="object-cover" />
+                    <button
+                      onClick={() => removePhoto(p.id)}
+                      className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <label className="flex items-center justify-center gap-2 text-sm font-semibold text-brand cursor-pointer border-2 border-dashed border-brand/30 rounded-xl px-4 py-3 hover:bg-brand/5">
+              {uploadingPhoto ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
+              {uploadingPhoto ? "Subiendo..." : "Tomar / subir foto de la carga"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handlePhoto(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+
+          <div className="mt-5">
+            <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide flex items-center gap-1.5">
+              <PenLine size={14} /> Firma del conductor
             </span>
             <div className="mt-1.5">
               <SignaturePad onChange={setSignature} />
@@ -735,10 +929,12 @@ function StepCompletado({
   token,
   contract,
   inventory,
+  photos,
 }: {
   token: string;
   contract: Contract;
   inventory: InventoryItem[];
+  photos: ContractPhoto[];
 }) {
   return (
     <Card>
@@ -746,23 +942,32 @@ function StepCompletado({
         <CheckCircle2 className="mx-auto text-emerald-500" size={52} />
         <h1 className="mt-4 text-xl font-extrabold text-navy">¡Contrato firmado con éxito!</h1>
         <p className="mt-2 text-sm text-neutral-500 max-w-sm mx-auto">
-          Tu mudanza quedó registrada con {inventory.length} artículo{inventory.length !== 1 && "s"} en el
-          inventario. Guarda tu código de rastreo para seguir el estado de tu mudanza.
+          Tu mudanza quedó registrada con {inventory.length} artículo{inventory.length !== 1 && "s"}
+          {photos.length > 0 && ` y ${photos.length} foto${photos.length !== 1 ? "s" : ""} de la carga`}. Guarda tu
+          código de rastreo para seguir el estado de tu mudanza.
         </p>
         <div className="mt-5 inline-flex items-center gap-2 bg-neutral-100 rounded-full px-5 py-2.5">
           <MapPinned size={16} className="text-brand" />
           <code className="font-bold text-navy">{token}</code>
         </div>
-        <div className="mt-6">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link href={`/rastreo/${token}`} className="btn-primary">
             Rastrear mi mudanza <ArrowRight size={18} />
           </Link>
+          <a
+            href={`/api/public/contracts/${token}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-outline !text-navy !border-neutral-300"
+          >
+            Descargar orden de servicio (PDF) <FileDown size={18} />
+          </a>
         </div>
       </div>
 
       <div className="mt-6 border-t border-neutral-100 pt-5 grid grid-cols-2 gap-4">
         <SignaturePreview label="Firma del cliente" src={contract.client_signature} name={contract.client_signed_name} />
-        <SignaturePreview label="Firma del transportista" src={contract.staff_signature} name={contract.staff_signed_name} />
+        <SignaturePreview label="Firma del conductor" src={contract.staff_signature} name={contract.staff_signed_name} />
       </div>
     </Card>
   );

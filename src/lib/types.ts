@@ -41,9 +41,32 @@ export type Contract = {
   staff_signature: string | null;
   staff_signed_at: string | null;
   staff_signed_name: string | null;
+  driver_name: string | null;
+  driver_doc: string | null;
+  driver_phone: string | null;
+  vehicle_plate: string | null;
+  pickup_datetime: string | null;
+  completion_datetime: string | null;
+  freight_value: string | null;
+  advance_value: string | null;
+  balance_due: string | null;
+  has_insurance: boolean | null;
+  policy_number: string | null;
+  insurance_company: string | null;
+  insured_amount: string | null;
+  insurance_value: string | null;
+  declared_value: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type ContractPhoto = {
+  id: string;
+  contract_id: string;
+  url: string;
+  caption: string | null;
+  created_at: string;
 };
 
 export type InventoryItem = {

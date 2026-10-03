@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KeyRound, CheckCircle2, MessageSquareText, Info, BarChart3 } from "lucide-react";
+import { KeyRound, CheckCircle2, MessageSquareText, Info, BarChart3, Star } from "lucide-react";
 
 export default function SettingsPage() {
   return (
@@ -15,6 +15,7 @@ export default function SettingsPage() {
         <PasswordCard />
         <TemplatesCard />
         <PixelCard />
+        <ReviewLinkCard />
       </div>
     </div>
   );
@@ -276,6 +277,80 @@ function PixelCard() {
           <button onClick={handleSave} disabled={saving} className="btn-primary !py-2.5 text-sm w-full disabled:opacity-60">
             {saved ? <CheckCircle2 size={16} /> : null}
             {saving ? "Guardando..." : saved ? "Guardado" : "Guardar pixel"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReviewLinkCard() {
+  const [link, setLink] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => setLink(data.settings?.["reviews.instagram_link"] || ""))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "reviews.instagram_link": link.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Error del servidor (${res.status})`);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-black/5 shadow-sm p-6">
+      <div className="flex items-center gap-2 text-brand mb-2">
+        <Star size={20} />
+        <h2 className="font-bold text-navy">Link de reseñas (Instagram)</h2>
+      </div>
+      <p className="text-xs text-neutral-500 mb-4 flex items-start gap-1.5">
+        <Info size={14} className="shrink-0 mt-0.5" />
+        El link de tu publicación de Instagram para pedir reseñas. Desde el detalle de cada contrato hay un botón
+        que arma y envía por WhatsApp el mensaje con este link.
+      </p>
+
+      {loading ? (
+        <p className="text-sm text-neutral-400">Cargando...</p>
+      ) : (
+        <div className="space-y-4">
+          <label className="block">
+            <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">URL de la publicación</span>
+            <input
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="https://www.instagram.com/p/..."
+              className="mt-1.5 w-full border-1.5 border-neutral-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </label>
+
+          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+
+          <button onClick={handleSave} disabled={saving} className="btn-primary !py-2.5 text-sm w-full disabled:opacity-60">
+            {saved ? <CheckCircle2 size={16} /> : null}
+            {saving ? "Guardando..." : saved ? "Guardado" : "Guardar link"}
           </button>
         </div>
       )}

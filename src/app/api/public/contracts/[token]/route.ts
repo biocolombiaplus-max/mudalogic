@@ -9,7 +9,10 @@ const CLIENT_EDITABLE_FIELDS = [
   "origin_address",
   "destination_address",
   "moving_date",
+  "pickup_datetime",
+  "completion_datetime",
   "notes",
+  "declared_value",
 ];
 
 function getContractByToken(token: string) {
@@ -22,12 +25,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
   if (!contract) {
     return NextResponse.json({ error: "Contrato no encontrado" }, { status: 404 });
   }
-  const [inventory, tracking] = await Promise.all([
+  const [inventory, tracking, photos] = await Promise.all([
     db.prepare("SELECT * FROM inventory_items WHERE contract_id = ? ORDER BY created_at ASC").all(contract.id as string),
     db.prepare("SELECT * FROM tracking_events WHERE contract_id = ? ORDER BY created_at ASC").all(contract.id as string),
+    db.prepare("SELECT * FROM contract_photos WHERE contract_id = ? ORDER BY created_at ASC").all(contract.id as string),
   ]);
 
-  return NextResponse.json({ contract, inventory, tracking });
+  return NextResponse.json({ contract, inventory, tracking, photos });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -45,13 +49,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ to
 
   const body = await req.json().catch(() => ({}));
   const updates: string[] = [];
-  const values: (string | null)[] = [];
+  const values: (string | boolean | null)[] = [];
 
   for (const field of CLIENT_EDITABLE_FIELDS) {
     if (field in body) {
       updates.push(`${field} = ?`);
       values.push(String(body[field] ?? "").slice(0, 500));
     }
+  }
+
+  if ("has_insurance" in body) {
+    updates.push("has_insurance = ?");
+    values.push(Boolean(body.has_insurance));
   }
 
   if (body.client_signature) {

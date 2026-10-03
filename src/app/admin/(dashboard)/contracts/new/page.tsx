@@ -18,6 +18,17 @@ export default function NewContractPage() {
     service_type: "Mudanza nacional puerta a puerta (empaque y desempaque incluido)",
     price: "",
     notes: "",
+    driver_name: "",
+    driver_doc: "",
+    driver_phone: "",
+    vehicle_plate: "",
+    freight_value: "",
+    advance_value: "",
+    balance_due: "",
+    policy_number: "",
+    insurance_company: "",
+    insured_amount: "",
+    insurance_value: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -114,6 +125,61 @@ export default function NewContractPage() {
         <Field label="Notas / condiciones adicionales">
           <textarea value={form.notes} onChange={(e) => update("notes", e.target.value)} rows={3} className="input resize-none" />
         </Field>
+
+        <div className="pt-2 border-t border-neutral-100">
+          <p className="text-xs font-bold text-brand uppercase tracking-wide mb-3">Datos del conductor</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Nombre del conductor">
+              <input value={form.driver_name} onChange={(e) => update("driver_name", e.target.value)} className="input" />
+            </Field>
+            <Field label="Cédula del conductor">
+              <input value={form.driver_doc} onChange={(e) => update("driver_doc", e.target.value)} className="input" />
+            </Field>
+            <Field label="Teléfono del conductor">
+              <input value={form.driver_phone} onChange={(e) => update("driver_phone", e.target.value)} className="input" />
+            </Field>
+            <Field label="Placa del vehículo">
+              <input value={form.vehicle_plate} onChange={(e) => update("vehicle_plate", e.target.value)} className="input" />
+            </Field>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-neutral-100">
+          <p className="text-xs font-bold text-brand uppercase tracking-wide mb-3">Valores del servicio</p>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <Field label="Valor del flete">
+              <input value={form.freight_value} onChange={(e) => update("freight_value", e.target.value)} placeholder="Ej: 1.400.000" className="input" />
+            </Field>
+            <Field label="Valor del anticipo">
+              <input value={form.advance_value} onChange={(e) => update("advance_value", e.target.value)} placeholder="Ej: 200.000 (70%)" className="input" />
+            </Field>
+            <Field label="Saldo pendiente">
+              <input value={form.balance_due} onChange={(e) => update("balance_due", e.target.value)} className="input" />
+            </Field>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-neutral-100">
+          <p className="text-xs font-bold text-brand uppercase tracking-wide mb-3">Valores de la póliza (opcional)</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Número de póliza">
+              <input value={form.policy_number} onChange={(e) => update("policy_number", e.target.value)} className="input" />
+            </Field>
+            <Field label="Aseguradora">
+              <input value={form.insurance_company} onChange={(e) => update("insurance_company", e.target.value)} className="input" />
+            </Field>
+            <Field label="Monto asegurado">
+              <input value={form.insured_amount} onChange={(e) => update("insured_amount", e.target.value)} className="input" />
+            </Field>
+            <Field label="Valor del seguro">
+              <input value={form.insurance_value} onChange={(e) => update("insurance_value", e.target.value)} className="input" />
+            </Field>
+          </div>
+          <p className="text-[11px] text-neutral-400 mt-1.5">
+            Si el cliente contrata seguro lo indicará él mismo al diligenciar su contrato — aquí solo registras la
+            póliza si ya la tienes gestionada.
+          </p>
+        </div>
 
         {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
 
