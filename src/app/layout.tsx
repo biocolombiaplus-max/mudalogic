@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -39,6 +39,15 @@ export const metadata: Metadata = {
     description:
       "Especialistas en mudanzas nacionales. Empacamos, transportamos y desempacamos por ti. Cotiza gratis y rastrea tu mudanza en tiempo real.",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "MudaLogic",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0A1128",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
