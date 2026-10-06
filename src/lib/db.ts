@@ -406,4 +406,16 @@ export async function generateTrackingCode(): Promise<string> {
   return (exists.rowCount ?? 0) > 0 ? generateTrackingCode() : full;
 }
 
+export async function generateQuoteCode(): Promise<string> {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  const full = `CT-${code}`;
+  await ensureInit();
+  const exists = await pool.query("SELECT 1 FROM quotes WHERE token = $1", [full]);
+  return (exists.rowCount ?? 0) > 0 ? generateQuoteCode() : full;
+}
+
 export default db;

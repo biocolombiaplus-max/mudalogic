@@ -15,11 +15,13 @@ import {
   Truck,
   ExternalLink,
   Megaphone,
+  Calculator,
 } from "lucide-react";
 
 const nav = [
   { href: "/admin", label: "Panel", icon: LayoutDashboard },
-  { href: "/admin/leads", label: "Cotizaciones", icon: Users },
+  { href: "/admin/leads", label: "Leads rápidos", icon: Users },
+  { href: "/admin/quotes", label: "Cotizaciones", icon: Calculator },
   { href: "/admin/remarketing", label: "Remarketing", icon: Megaphone },
   { href: "/admin/contracts", label: "Contratos y mudanzas", icon: FileSignature },
   { href: "/admin/content", label: "Contenido del sitio", icon: ImageIcon },

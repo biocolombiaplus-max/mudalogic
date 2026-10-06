@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { SiteContent } from "@/lib/settings";
 import Header from "./Header";
 import Hero from "./Hero";
@@ -15,11 +15,11 @@ import TrackingTeaser from "./TrackingTeaser";
 import CTASection from "./CTASection";
 import Footer from "./Footer";
 import WhatsAppFloat from "./WhatsAppFloat";
-import QuoteModal from "./QuoteModal";
 import MetaPixel from "@/components/analytics/MetaPixel";
 
 export default function LandingClient({ content }: { content: SiteContent }) {
-  const [quoteOpen, setQuoteOpen] = useState(false);
+  const router = useRouter();
+  const openQuote = () => router.push("/cotizacion");
   const whatsappHref = `https://wa.me/${content.whatsapp}?text=${encodeURIComponent(
     "Hola MudaLogic, quiero información sobre mudanzas."
   )}`;
@@ -27,7 +27,7 @@ export default function LandingClient({ content }: { content: SiteContent }) {
   return (
     <>
       <MetaPixel pixelId={content.metaPixelId} />
-      <Header logo={content.logo} phoneDisplay={content.phone_display} onOpenQuote={() => setQuoteOpen(true)} />
+      <Header logo={content.logo} phoneDisplay={content.phone_display} onOpenQuote={openQuote} />
       <main>
         <Hero
           title={content.heroTitle}
@@ -35,7 +35,7 @@ export default function LandingClient({ content }: { content: SiteContent }) {
           image={content.heroImage}
           whatsappHref={whatsappHref}
           stats={content.stats}
-          onOpenQuote={() => setQuoteOpen(true)}
+          onOpenQuote={openQuote}
         />
         <TrustBadges badges={content.trustBadges} />
         <Services services={content.services} />
@@ -51,7 +51,7 @@ export default function LandingClient({ content }: { content: SiteContent }) {
         <Testimonials testimonials={content.testimonials} />
         <FAQ items={content.faq} />
         <TrackingTeaser />
-        <CTASection whatsappHref={whatsappHref} onOpenQuote={() => setQuoteOpen(true)} />
+        <CTASection whatsappHref={whatsappHref} onOpenQuote={openQuote} />
       </main>
       <Footer
         logo={content.logo}
@@ -62,7 +62,6 @@ export default function LandingClient({ content }: { content: SiteContent }) {
         whatsappHref={whatsappHref}
       />
       <WhatsAppFloat href={whatsappHref} />
-      <QuoteModal open={quoteOpen} onClose={() => setQuoteOpen(false)} whatsapp={content.whatsapp} />
     </>
   );
 }
