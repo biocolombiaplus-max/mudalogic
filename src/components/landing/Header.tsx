@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Menu, X, Phone, MapPin, ChevronRight } from "lucide-react";
+import { resolveLogoSizePx } from "@/lib/logo-size";
 
 type Props = {
   logo: string;
@@ -21,32 +22,7 @@ const links = [
   { href: "#contacto", label: "Contacto" },
 ];
 
-const LOGO_SIZE_CLASSES: Record<string, string> = {
-  sm: "h-8 sm:h-9",
-  md: "h-12 sm:h-14",
-  lg: "h-16 sm:h-20",
-  xl: "h-20 sm:h-24",
-};
-
-const LOGO_ORDER_CLASSES: Record<string, string> = {
-  left: "lg:order-1",
-  center: "lg:order-2",
-  right: "lg:order-3",
-};
-
-const NAV_ORDER_CLASSES: Record<string, string> = {
-  left: "lg:order-2",
-  center: "lg:order-1",
-  right: "lg:order-1",
-};
-
-const ACTIONS_ORDER_CLASSES: Record<string, string> = {
-  left: "lg:order-3",
-  center: "lg:order-3",
-  right: "lg:order-2",
-};
-
-export default function Header({ logo, logoSize = "md", logoPosition = "left", phoneDisplay, onOpenQuote }: Props) {
+export default function Header({ logo, logoSize = "56", logoPosition = "left", phoneDisplay, onOpenQuote }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -57,7 +33,30 @@ export default function Header({ logo, logoSize = "md", logoPosition = "left", p
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const logoHeightClass = LOGO_SIZE_CLASSES[logoSize] ?? LOGO_SIZE_CLASSES.md;
+  const heightPx = resolveLogoSizePx(logoSize);
+  const isCenter = logoPosition === "center";
+  const isRight = logoPosition === "right";
+  const brandOrderClass = isRight ? "order-3" : "order-1";
+  const navOrderClass = isRight || isCenter ? "lg:order-1" : "lg:order-2";
+  const actionsOrderClass = isRight ? "lg:order-2" : "lg:order-3";
+  const mobileButtonClass = isRight ? "order-1" : "order-3 ml-auto lg:ml-0";
+
+  const brandInner = logo ? (
+    <Image
+      src={logo}
+      alt="MudaLogic"
+      width={220}
+      height={heightPx}
+      style={{ height: heightPx, width: "auto" }}
+      className="object-contain"
+      unoptimized
+      priority
+    />
+  ) : (
+    <span className="text-2xl font-extrabold tracking-tight text-white">
+      MUDA<span className="text-brand-light">LOGIC</span>
+    </span>
+  );
 
   return (
     <header
@@ -68,29 +67,13 @@ export default function Header({ logo, logoSize = "md", logoPosition = "left", p
       }`}
     >
       <div className="relative z-40 container-page flex items-center justify-between py-3">
-        <a href="#inicio" className={`flex items-center gap-2 shrink-0 ${LOGO_ORDER_CLASSES[logoPosition] ?? ""}`}>
-          {logo ? (
-            <Image
-              src={logo}
-              alt="MudaLogic"
-              width={220}
-              height={64}
-              className={`${logoHeightClass} w-auto object-contain`}
-              unoptimized
-              priority
-            />
-          ) : (
-            <span className="text-2xl font-extrabold tracking-tight text-white">
-              MUDA<span className="text-brand-light">LOGIC</span>
-            </span>
-          )}
-        </a>
+        {!isCenter && (
+          <a href="#inicio" className={`flex items-center gap-2 shrink-0 ${brandOrderClass}`}>
+            {brandInner}
+          </a>
+        )}
 
-        <nav
-          className={`hidden lg:flex items-center gap-7 text-sm font-medium text-white/90 ${
-            NAV_ORDER_CLASSES[logoPosition] ?? ""
-          }`}
-        >
+        <nav className={`hidden lg:flex items-center gap-7 text-sm font-medium text-white/90 ${navOrderClass}`}>
           {links.map((l) => (
             <a key={l.href} href={l.href} className="hover:text-brand-light transition-colors">
               {l.label}
@@ -98,7 +81,7 @@ export default function Header({ logo, logoSize = "md", logoPosition = "left", p
           ))}
         </nav>
 
-        <div className={`hidden lg:flex items-center gap-4 ${ACTIONS_ORDER_CLASSES[logoPosition] ?? ""}`}>
+        <div className={`hidden lg:flex items-center gap-4 ${actionsOrderClass}`}>
           <a
             href={`tel:+57${phoneDisplay.replace(/\s|-/g, "")}`}
             className="flex items-center gap-2 text-white/90 text-sm font-semibold hover:text-brand-light"
@@ -111,12 +94,21 @@ export default function Header({ logo, logoSize = "md", logoPosition = "left", p
         </div>
 
         <button
-          className="lg:hidden text-white p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10"
+          className={`lg:hidden text-white p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10 ${mobileButtonClass}`}
           onClick={() => setOpen((v) => !v)}
           aria-label="Abrir menú"
         >
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
+
+        {isCenter && (
+          <a
+            href="#inicio"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 shrink-0"
+          >
+            {brandInner}
+          </a>
+        )}
       </div>
 
       {open && (

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type { SiteContent } from "@/lib/settings";
 import { ICON_OPTIONS } from "@/lib/icon-map";
+import { resolveLogoSizePx, LOGO_SIZE_MIN, LOGO_SIZE_MAX } from "@/lib/logo-size";
 import ImageUploader from "./ImageUploader";
 
 const TABS = [
@@ -34,13 +35,6 @@ const TABS = [
   { id: "preguntas", label: "Preguntas", icon: HelpCircle },
 ];
 
-const LOGO_SIZE_OPTIONS = [
-  { value: "sm", label: "Pequeño" },
-  { value: "md", label: "Mediano" },
-  { value: "lg", label: "Grande" },
-  { value: "xl", label: "Muy grande" },
-];
-
 const LOGO_POSITION_OPTIONS = [
   { value: "left", label: "Izquierda" },
   { value: "center", label: "Centro" },
@@ -50,7 +44,7 @@ const LOGO_POSITION_OPTIONS = [
 export default function ContentEditor({ initial }: { initial: SiteContent }) {
   const [tab, setTab] = useState("general");
   const [logo, setLogo] = useState(initial.logo);
-  const [logoSize, setLogoSize] = useState(initial.logoSize || "md");
+  const [logoSize, setLogoSize] = useState(resolveLogoSizePx(initial.logoSize || ""));
   const [logoPosition, setLogoPosition] = useState(initial.logoPosition || "left");
   const [fixingLogo, setFixingLogo] = useState(false);
   const [fixLogoError, setFixLogoError] = useState("");
@@ -83,7 +77,7 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
     setError("");
     const payload = {
       "site.logo": logo,
-      "site.logo_size": logoSize,
+      "site.logo_size": String(logoSize),
       "site.logo_position": logoPosition,
       "site.phone_display": phone,
       "site.whatsapp": whatsapp,
@@ -199,28 +193,27 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
               {fixLogoError && <p className="mt-1 text-xs text-red-600">{fixLogoError}</p>}
 
               <div className="mt-4">
-                <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">Tamaño del logo</span>
-                <div className="mt-1.5 flex gap-1.5">
-                  {LOGO_SIZE_OPTIONS.map((o) => (
-                    <button
-                      key={o.value}
-                      type="button"
-                      onClick={() => setLogoSize(o.value)}
-                      className={`flex-1 text-xs font-semibold px-2.5 py-2 rounded-lg border transition-colors ${
-                        logoSize === o.value
-                          ? "bg-navy text-white border-navy"
-                          : "bg-white text-neutral-600 border-neutral-200"
-                      }`}
-                    >
-                      {o.label}
-                    </button>
-                  ))}
+                <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide flex items-center justify-between">
+                  Tamaño del logo <span className="text-brand font-bold normal-case">{logoSize}px</span>
+                </span>
+                <input
+                  type="range"
+                  min={LOGO_SIZE_MIN}
+                  max={LOGO_SIZE_MAX}
+                  step={2}
+                  value={logoSize}
+                  onChange={(e) => setLogoSize(Number(e.target.value))}
+                  className="mt-2 w-full accent-brand"
+                />
+                <div className="flex justify-between text-[10px] text-neutral-400 mt-0.5">
+                  <span>Pequeño</span>
+                  <span>Muy grande</span>
                 </div>
               </div>
 
               <div className="mt-4">
                 <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">
-                  Posición en el menú (pantallas grandes)
+                  Posición del logo (celular y pantallas grandes)
                 </span>
                 <div className="mt-1.5 flex gap-1.5">
                   {LOGO_POSITION_OPTIONS.map((o) => (
@@ -238,9 +231,6 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
                     </button>
                   ))}
                 </div>
-                <p className="mt-1.5 text-[11px] text-neutral-400">
-                  En celular el logo siempre va a la izquierda, junto al botón de menú.
-                </p>
               </div>
             </div>
             <div className="space-y-4">

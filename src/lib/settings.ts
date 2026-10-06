@@ -82,7 +82,7 @@ export async function getSiteContent(): Promise<SiteContent> {
     getSetting("site.address_cucuta", ""),
     getSetting("site.address_medellin", ""),
     getSetting("site.logo", ""),
-    getSetting("site.logo_size", "md"),
+    getSetting("site.logo_size", "56"),
     getSetting("site.logo_position", "left"),
     getSetting("hero.title", ""),
     getSetting("hero.subtitle", ""),
