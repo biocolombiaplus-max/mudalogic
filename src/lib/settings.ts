@@ -37,6 +37,8 @@ export type SiteContent = {
   address_cucuta: string;
   address_medellin: string;
   logo: string;
+  logoSize: string;
+  logoPosition: string;
   heroTitle: string;
   heroSubtitle: string;
   heroImage: string;
@@ -59,6 +61,8 @@ export async function getSiteContent(): Promise<SiteContent> {
     address_cucuta,
     address_medellin,
     logo,
+    logoSize,
+    logoPosition,
     heroTitle,
     heroSubtitle,
     heroImage,
@@ -78,6 +82,8 @@ export async function getSiteContent(): Promise<SiteContent> {
     getSetting("site.address_cucuta", ""),
     getSetting("site.address_medellin", ""),
     getSetting("site.logo", ""),
+    getSetting("site.logo_size", "md"),
+    getSetting("site.logo_position", "left"),
     getSetting("hero.title", ""),
     getSetting("hero.subtitle", ""),
     getSetting("hero.image", ""),
@@ -99,6 +105,8 @@ export async function getSiteContent(): Promise<SiteContent> {
     address_cucuta,
     address_medellin,
     logo,
+    logoSize,
+    logoPosition,
     heroTitle,
     heroSubtitle,
     heroImage,

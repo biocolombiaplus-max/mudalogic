@@ -34,9 +34,24 @@ const TABS = [
   { id: "preguntas", label: "Preguntas", icon: HelpCircle },
 ];
 
+const LOGO_SIZE_OPTIONS = [
+  { value: "sm", label: "Pequeño" },
+  { value: "md", label: "Mediano" },
+  { value: "lg", label: "Grande" },
+  { value: "xl", label: "Muy grande" },
+];
+
+const LOGO_POSITION_OPTIONS = [
+  { value: "left", label: "Izquierda" },
+  { value: "center", label: "Centro" },
+  { value: "right", label: "Derecha" },
+];
+
 export default function ContentEditor({ initial }: { initial: SiteContent }) {
   const [tab, setTab] = useState("general");
   const [logo, setLogo] = useState(initial.logo);
+  const [logoSize, setLogoSize] = useState(initial.logoSize || "md");
+  const [logoPosition, setLogoPosition] = useState(initial.logoPosition || "left");
   const [fixingLogo, setFixingLogo] = useState(false);
   const [fixLogoError, setFixLogoError] = useState("");
   const [phone, setPhone] = useState(initial.phone_display);
@@ -68,6 +83,8 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
     setError("");
     const payload = {
       "site.logo": logo,
+      "site.logo_size": logoSize,
+      "site.logo_position": logoPosition,
       "site.phone_display": phone,
       "site.whatsapp": whatsapp,
       "site.email": email,
@@ -180,6 +197,51 @@ export default function ContentEditor({ initial }: { initial: SiteContent }) {
                 </button>
               )}
               {fixLogoError && <p className="mt-1 text-xs text-red-600">{fixLogoError}</p>}
+
+              <div className="mt-4">
+                <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">Tamaño del logo</span>
+                <div className="mt-1.5 flex gap-1.5">
+                  {LOGO_SIZE_OPTIONS.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setLogoSize(o.value)}
+                      className={`flex-1 text-xs font-semibold px-2.5 py-2 rounded-lg border transition-colors ${
+                        logoSize === o.value
+                          ? "bg-navy text-white border-navy"
+                          : "bg-white text-neutral-600 border-neutral-200"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">
+                  Posición en el menú (pantallas grandes)
+                </span>
+                <div className="mt-1.5 flex gap-1.5">
+                  {LOGO_POSITION_OPTIONS.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setLogoPosition(o.value)}
+                      className={`flex-1 text-xs font-semibold px-2.5 py-2 rounded-lg border transition-colors ${
+                        logoPosition === o.value
+                          ? "bg-navy text-white border-navy"
+                          : "bg-white text-neutral-600 border-neutral-200"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] text-neutral-400">
+                  En celular el logo siempre va a la izquierda, junto al botón de menú.
+                </p>
+              </div>
             </div>
             <div className="space-y-4">
               <TextField label="Teléfono para mostrar" value={phone} onChange={setPhone} placeholder="313 847 0094" />

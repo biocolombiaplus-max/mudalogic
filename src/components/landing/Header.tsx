@@ -6,6 +6,8 @@ import { Menu, X, Phone, MapPin, ChevronRight } from "lucide-react";
 
 type Props = {
   logo: string;
+  logoSize?: string;
+  logoPosition?: string;
   phoneDisplay: string;
   onOpenQuote: () => void;
 };
@@ -19,7 +21,32 @@ const links = [
   { href: "#contacto", label: "Contacto" },
 ];
 
-export default function Header({ logo, phoneDisplay, onOpenQuote }: Props) {
+const LOGO_SIZE_CLASSES: Record<string, string> = {
+  sm: "h-8 sm:h-9",
+  md: "h-12 sm:h-14",
+  lg: "h-16 sm:h-20",
+  xl: "h-20 sm:h-24",
+};
+
+const LOGO_ORDER_CLASSES: Record<string, string> = {
+  left: "lg:order-1",
+  center: "lg:order-2",
+  right: "lg:order-3",
+};
+
+const NAV_ORDER_CLASSES: Record<string, string> = {
+  left: "lg:order-2",
+  center: "lg:order-1",
+  right: "lg:order-1",
+};
+
+const ACTIONS_ORDER_CLASSES: Record<string, string> = {
+  left: "lg:order-3",
+  center: "lg:order-3",
+  right: "lg:order-2",
+};
+
+export default function Header({ logo, logoSize = "md", logoPosition = "left", phoneDisplay, onOpenQuote }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -30,6 +57,8 @@ export default function Header({ logo, phoneDisplay, onOpenQuote }: Props) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const logoHeightClass = LOGO_SIZE_CLASSES[logoSize] ?? LOGO_SIZE_CLASSES.md;
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -39,14 +68,14 @@ export default function Header({ logo, phoneDisplay, onOpenQuote }: Props) {
       }`}
     >
       <div className="relative z-40 container-page flex items-center justify-between py-3">
-        <a href="#inicio" className="flex items-center gap-2 shrink-0">
+        <a href="#inicio" className={`flex items-center gap-2 shrink-0 ${LOGO_ORDER_CLASSES[logoPosition] ?? ""}`}>
           {logo ? (
             <Image
               src={logo}
               alt="MudaLogic"
               width={220}
               height={64}
-              className="h-12 sm:h-14 w-auto object-contain"
+              className={`${logoHeightClass} w-auto object-contain`}
               unoptimized
               priority
             />
@@ -57,7 +86,11 @@ export default function Header({ logo, phoneDisplay, onOpenQuote }: Props) {
           )}
         </a>
 
-        <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-white/90">
+        <nav
+          className={`hidden lg:flex items-center gap-7 text-sm font-medium text-white/90 ${
+            NAV_ORDER_CLASSES[logoPosition] ?? ""
+          }`}
+        >
           {links.map((l) => (
             <a key={l.href} href={l.href} className="hover:text-brand-light transition-colors">
               {l.label}
@@ -65,7 +98,7 @@ export default function Header({ logo, phoneDisplay, onOpenQuote }: Props) {
           ))}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-4">
+        <div className={`hidden lg:flex items-center gap-4 ${ACTIONS_ORDER_CLASSES[logoPosition] ?? ""}`}>
           <a
             href={`tel:+57${phoneDisplay.replace(/\s|-/g, "")}`}
             className="flex items-center gap-2 text-white/90 text-sm font-semibold hover:text-brand-light"

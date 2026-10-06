@@ -27,7 +27,13 @@ export default function LandingClient({ content }: { content: SiteContent }) {
   return (
     <>
       <MetaPixel pixelId={content.metaPixelId} />
-      <Header logo={content.logo} phoneDisplay={content.phone_display} onOpenQuote={openQuote} />
+      <Header
+        logo={content.logo}
+        logoSize={content.logoSize}
+        logoPosition={content.logoPosition}
+        phoneDisplay={content.phone_display}
+        onOpenQuote={openQuote}
+      />
       <main>
         <Hero
           title={content.heroTitle}

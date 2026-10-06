@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KeyRound, CheckCircle2, MessageSquareText, Info, BarChart3, Star } from "lucide-react";
+import { KeyRound, CheckCircle2, MessageSquareText, Info, BarChart3, Star, ImageOff, RefreshCw } from "lucide-react";
 
 export default function SettingsPage() {
   return (
@@ -16,7 +16,91 @@ export default function SettingsPage() {
         <TemplatesCard />
         <PixelCard />
         <ReviewLinkCard />
+        <MigrateImagesCard />
       </div>
+    </div>
+  );
+}
+
+function MigrateImagesCard() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{
+    migrated: { key: string }[];
+    failed: { key: string; error?: string }[];
+    total: number;
+  } | null>(null);
+  const [error, setError] = useState("");
+
+  async function handleMigrate() {
+    setLoading(true);
+    setError("");
+    setResult(null);
+    try {
+      const res = await fetch("/api/admin/migrate-images", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Error del servidor (${res.status})`);
+      setResult(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo migrar las imágenes");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-black/5 shadow-sm p-6">
+      <div className="flex items-center gap-2 text-brand mb-2">
+        <ImageOff size={20} />
+        <h2 className="font-bold text-navy">Reparar imágenes que no cargan</h2>
+      </div>
+      <p className="text-xs text-neutral-500 mb-4 flex items-start gap-1.5">
+        <Info size={14} className="shrink-0 mt-0.5" />
+        Si el logo, el inicio, los servicios, la galería o las sedes dejaron de mostrar su imagen (por
+        ejemplo, por cupo lleno en el almacenamiento anterior), usa este botón: busca cada imagen que sigue
+        guardada en el sitio actual del logo, los servicios, la galería y las sedes de Cúcuta/Medellín, y la
+        vuelve a subir al almacenamiento configurado ahora mismo.
+      </p>
+
+      <button
+        onClick={handleMigrate}
+        disabled={loading}
+        className="btn-primary !py-2.5 text-sm w-full disabled:opacity-60 flex items-center justify-center gap-2"
+      >
+        <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+        {loading ? "Reparando imágenes..." : "Reparar imágenes ahora"}
+      </button>
+
+      {error && <p className="text-sm text-red-600 font-medium mt-3">{error}</p>}
+
+      {result && (
+        <div className="mt-4 text-sm space-y-2">
+          {result.total === 0 && <p className="text-neutral-500">No se encontró ninguna imagen por reparar.</p>}
+          {result.migrated.length > 0 && (
+            <p className="text-emerald-600 font-medium flex items-center gap-1.5">
+              <CheckCircle2 size={16} /> {result.migrated.length} imagen(es) reparada(s) correctamente.
+            </p>
+          )}
+          {result.failed.length > 0 && (
+            <div className="text-amber-600">
+              <p className="font-medium">{result.failed.length} imagen(es) no se pudieron recuperar automáticamente:</p>
+              <ul className="list-disc list-inside text-xs mt-1 space-y-0.5">
+                {result.failed.map((f, i) => (
+                  <li key={i}>
+                    {f.key} {f.error ? `— ${f.error}` : ""}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs mt-1.5 text-neutral-500">
+                Esas tendrás que volver a subirlas manualmente desde la sección correspondiente (Editor de
+                contenido).
+              </p>
+            </div>
+          )}
+          {result.migrated.length > 0 && (
+            <p className="text-xs text-neutral-400">Recarga la página principal para ver los cambios.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
