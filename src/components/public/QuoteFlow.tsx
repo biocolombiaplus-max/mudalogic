@@ -551,18 +551,28 @@ function StepEnviado({ quote, items, companyWhatsapp }: { quote: Quote; items: Q
   const [sent, setSent] = useState(false);
 
   function sendToCompany() {
-    const lines = [
-      `Hola MudaLogic, quiero cotizar mi mudanza (código ${quote.token}):`,
-      `*Nombre:* ${quote.client_name}`,
-      `*Teléfono:* ${quote.client_phone}`,
-      `*Origen:* ${quote.origin_address}${quote.origin_floor ? ` (piso ${quote.origin_floor})` : ""}`,
-      `*Destino:* ${quote.destination_address}${quote.destination_floor ? ` (piso ${quote.destination_floor})` : ""}`,
-      quote.moving_date ? `*Fecha estimada:* ${quote.moving_date}` : "",
-      `*Inventario:* ${items.length} artículo${items.length !== 1 ? "s" : ""} — ${items.map((i) => `${i.quantity}x ${i.name}`).join(", ")}`,
-      quote.notes ? `*Detalles:* ${quote.notes}` : "",
+    const header = [
+      `🚚 *Nueva cotización de mudanza*`,
+      `Código: *${quote.token}*`,
+      ``,
+      `👤 *Nombre:* ${quote.client_name}`,
+      `📱 *Teléfono:* ${quote.client_phone}`,
+      `📍 *Origen:* ${quote.origin_address}${quote.origin_floor ? ` (piso ${quote.origin_floor})` : ""}`,
+      `🏁 *Destino:* ${quote.destination_address}${quote.destination_floor ? ` (piso ${quote.destination_floor})` : ""}`,
+      quote.moving_date ? `📅 *Fecha estimada:* ${quote.moving_date}` : "",
     ].filter(Boolean);
+
+    const inventory = [
+      ``,
+      `📦 *Inventario (${items.length} artículo${items.length !== 1 ? "s" : ""}):*`,
+      ...items.map((i, idx) => `${idx + 1}. ${i.name} ×${i.quantity}`),
+    ];
+
+    const footer = quote.notes ? [``, `📝 *Detalles:* ${quote.notes}`] : [];
+
+    const text = [...header, ...inventory, ...footer].join("\n");
     const phone = (companyWhatsapp || "").replace(/\D/g, "");
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
     setSent(true);
   }
 
