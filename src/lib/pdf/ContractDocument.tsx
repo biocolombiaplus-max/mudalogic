@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import type { Contract, ContractPhoto, InventoryItem } from "@/lib/types";
+import { LEGAL_REPRESENTATIVE } from "@/lib/types";
+import type { Contract, ContractAddendum, ContractPhoto, InventoryItem } from "@/lib/types";
 
 const BRAND = "#1157E0";
 const NAVY = "#0A1128";
@@ -57,14 +58,18 @@ const styles = StyleSheet.create({
   invRow: { flexDirection: "row", borderTopWidth: 1, borderColor: "#DCE2F0" },
   invHeadRow: { flexDirection: "row", backgroundColor: NAVY },
   invCellNo: { width: "6%", padding: 4, fontSize: 8 },
-  invCellName: { width: "40%", padding: 4, fontSize: 8 },
-  invCellCat: { width: "22%", padding: 4, fontSize: 8 },
-  invCellQty: { width: "10%", padding: 4, fontSize: 8 },
-  invCellCond: { width: "22%", padding: 4, fontSize: 8 },
+  invCellName: { width: "32%", padding: 4, fontSize: 8 },
+  invCellCat: { width: "18%", padding: 4, fontSize: 8 },
+  invCellQty: { width: "8%", padding: 4, fontSize: 8 },
+  invCellCond: { width: "18%", padding: 4, fontSize: 8 },
+  invCellFlag: { width: "18%", padding: 4, fontSize: 7.5 },
   invHeadCell: { color: "#FFFFFF", fontFamily: "Helvetica-Bold", fontSize: 7.5 },
+  flagAdditional: { color: "#B07A16", fontFamily: "Helvetica-Bold" },
+  flagLoaded: { color: "#0F8A6E" },
   photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   photoBox: { width: "31%", marginBottom: 8 },
   photoImg: { width: "100%", height: 100, objectFit: "cover", borderRadius: 3 },
+  photoCaption: { fontSize: 7, color: "#55617A", marginTop: 2, textAlign: "center" },
   clause: { marginBottom: 6 },
   clauseTitle: { fontSize: 8.5, fontFamily: "Helvetica-Bold", marginBottom: 1.5 },
   clauseBody: { fontSize: 8, lineHeight: 1.35, color: "#2A3345" },
@@ -122,6 +127,15 @@ function fmtDateTime(v: string | null | undefined) {
   return d.toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" });
 }
 
+function Footer({ companyAddress, companyPhone, companyEmail }: { companyAddress: string; companyPhone: string; companyEmail: string }) {
+  return (
+    <Text style={styles.footer}>
+      {companyAddress ? `${companyAddress} · ` : ""}
+      {companyPhone} · {companyEmail}
+    </Text>
+  );
+}
+
 const CLAUSES: { title: string; body: string }[] = [
   {
     title: "1. Recepción y estado de los bienes",
@@ -129,7 +143,7 @@ const CLAUSES: { title: string; body: string }[] = [
   },
   {
     title: "2. Inventario declarado por el cliente",
-    body: "El servicio contratado comprende exclusivamente los bienes relacionados en el inventario diligenciado por el cliente. La inclusión posterior de elementos no relacionados generará costos adicionales que deberán ser asumidos por el cliente.",
+    body: "El servicio contratado comprende exclusivamente los bienes relacionados en el inventario diligenciado por el cliente. La inclusión posterior de elementos no relacionados generará costos adicionales que deberán ser asumidos por el cliente, según se detalla en los ajustes adicionales de este documento, si los hay.",
   },
   {
     title: "3. Dirección de entrega obligatoria",
@@ -164,8 +178,8 @@ const CLAUSES: { title: string; body: string }[] = [
     body: "El cliente autoriza expresamente que cualquier comunicación relacionada con la ejecución del presente servicio pueda realizarse mediante llamada telefónica, mensajes de texto, WhatsApp o correo electrónico suministrados en este documento, conforme a la Ley 527 de 1999 sobre comercio electrónico y mensajes de datos.",
   },
   {
-    title: "11. Domicilio contractual",
-    body: "Para todos los efectos legales derivados de la presente orden de servicio, las partes fijan como domicilio contractual la ciudad de Cúcuta, Norte de Santander.",
+    title: "11. Validez del contrato y domicilio contractual",
+    body: "El presente contrato solo tiene validez una vez se haya girado el anticipo pactado. Para todos los efectos legales derivados de la presente orden de servicio, las partes fijan como domicilio contractual la ciudad de Cúcuta, Norte de Santander.",
   },
   {
     title: "12. Aceptación expresa del servicio",
@@ -177,6 +191,7 @@ export function ContractDocument({
   contract,
   inventory,
   photos,
+  addenda,
   logoUrl,
   companyPhone,
   companyEmail,
@@ -185,6 +200,7 @@ export function ContractDocument({
   contract: Contract;
   inventory: InventoryItem[];
   photos: ContractPhoto[];
+  addenda: ContractAddendum[];
   logoUrl: string;
   companyPhone: string;
   companyEmail: string;
@@ -239,11 +255,20 @@ export function ContractDocument({
         />
 
         <Section
+          title="REPRESENTANTE LEGAL — MUDALOGIC"
+          rows={[
+            { label: "Nombre", value: LEGAL_REPRESENTATIVE.name },
+            { label: "NIT", value: LEGAL_REPRESENTATIVE.nit },
+          ]}
+        />
+
+        <Section
           title="VALORES DEL SERVICIO"
           rows={[
             { label: "Valor del flete", value: fmt(contract.freight_value) || fmt(contract.price) },
-            { label: "Valor del anticipo", value: fmt(contract.advance_value) },
-            { label: "Saldo pendiente", value: fmt(contract.balance_due) },
+            { label: "Valor del anticipo (70%)", value: fmt(contract.advance_value) },
+            { label: "Anticipo recibido", value: fmt(contract.advance_received) },
+            { label: "Saldo pendiente (30%)", value: fmt(contract.balance_due) },
           ]}
         />
 
@@ -278,18 +303,16 @@ export function ContractDocument({
               {contract.staff_signature ? <Image src={contract.staff_signature} style={styles.sigImg} /> : null}
             </View>
             <View style={styles.sigLine}>
-              <Text style={styles.sigLabel}>Firma del conductor</Text>
+              <Text style={styles.sigLabel}>Representante legal MudaLogic</Text>
               <Text style={styles.sigMeta}>
-                {fmt(contract.staff_signed_name)} {contract.staff_signed_at ? `· ${fmtDateTime(contract.staff_signed_at)}` : ""}
+                {contract.staff_signature ? LEGAL_REPRESENTATIVE.name : "Pendiente"}{" "}
+                {contract.staff_signed_at ? `· ${fmtDateTime(contract.staff_signed_at)}` : ""}
               </Text>
             </View>
           </View>
         </View>
 
-        <Text style={styles.footer}>
-          {companyAddress ? `${companyAddress} · ` : ""}
-          {companyPhone} · {companyEmail}
-        </Text>
+        <Footer companyAddress={companyAddress} companyPhone={companyPhone} companyEmail={companyEmail} />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -301,6 +324,7 @@ export function ContractDocument({
             <Text style={[styles.invCellCat, styles.invHeadCell]}>Categoría</Text>
             <Text style={[styles.invCellQty, styles.invHeadCell]}>Cant.</Text>
             <Text style={[styles.invCellCond, styles.invHeadCell]}>Estado</Text>
+            <Text style={[styles.invCellFlag, styles.invHeadCell]}>Cargue</Text>
           </View>
           {inventory.length === 0 ? (
             <View style={styles.invRow}>
@@ -314,6 +338,9 @@ export function ContractDocument({
                 <Text style={styles.invCellCat}>{item.category}</Text>
                 <Text style={styles.invCellQty}>{item.quantity}</Text>
                 <Text style={styles.invCellCond}>{item.condition}</Text>
+                <Text style={[styles.invCellFlag, item.is_additional ? styles.flagAdditional : item.loaded ? styles.flagLoaded : undefined]}>
+                  {item.is_additional ? "ADICIONAL" : item.loaded ? "Cargado ✓" : "—"}
+                </Text>
               </View>
             ))
           )}
@@ -321,17 +348,37 @@ export function ContractDocument({
 
         {photos.length > 0 && (
           <View style={{ marginTop: 18 }}>
-            <Text style={styles.pageTitle}>EVIDENCIA FOTOGRÁFICA DE LA CARGA</Text>
+            <Text style={styles.pageTitle}>EVIDENCIA FOTOGRÁFICA — ESPACIOS Y CARGA</Text>
             <View style={styles.photoGrid}>
               {photos.map((p) => (
                 <View style={styles.photoBox} key={p.id}>
                   <Image src={p.url} style={styles.photoImg} />
+                  {p.caption ? <Text style={styles.photoCaption}>{p.caption}</Text> : null}
                 </View>
               ))}
             </View>
           </View>
         )}
+
+        <Footer companyAddress={companyAddress} companyPhone={companyPhone} companyEmail={companyEmail} />
       </Page>
+
+      {addenda.length > 0 && (
+        <Page size="A4" style={styles.page}>
+          <Text style={styles.pageTitle}>AJUSTES ADICIONALES (OTROSÍ)</Text>
+          <Text style={{ fontSize: 8, marginBottom: 8, color: "#2A3345" }}>
+            Los siguientes valores corresponden a elementos o servicios adicionales no contemplados en el inventario
+            original, identificados durante el cargue y acordados entre las partes conforme a la cláusula 2 de las
+            condiciones contractuales.
+          </Text>
+          <View style={styles.table}>
+            {addenda.map((a) => (
+              <Row key={a.id} label={a.description} value={a.amount || "—"} />
+            ))}
+          </View>
+          <Footer companyAddress={companyAddress} companyPhone={companyPhone} companyEmail={companyEmail} />
+        </Page>
+      )}
 
       <Page size="A4" style={styles.page}>
         <Text style={styles.pageTitle}>CONDICIONES CONTRACTUALES DEL SERVICIO</Text>
@@ -355,16 +402,32 @@ export function ContractDocument({
           </View>
           <View style={styles.sigBox}>
             <View style={styles.sigLine}>
-              <Text style={styles.sigLabel}>Firma del conductor</Text>
-              <Text style={styles.sigMeta}>{fmt(contract.staff_signed_name)}</Text>
+              <Text style={styles.sigLabel}>Representante legal MudaLogic</Text>
+              <Text style={styles.sigMeta}>{LEGAL_REPRESENTATIVE.name} — NIT {LEGAL_REPRESENTATIVE.nit}</Text>
             </View>
           </View>
         </View>
 
-        <Text style={styles.footer}>
-          {companyAddress ? `${companyAddress} · ` : ""}
-          {companyPhone} · {companyEmail}
-        </Text>
+        {contract.driver_signature && (
+          <View style={{ marginTop: 20 }}>
+            <Text style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>
+              Constancia de cargue
+            </Text>
+            <View style={styles.sigBox}>
+              <View style={styles.sigImgBox}>
+                <Image src={contract.driver_signature} style={styles.sigImg} />
+              </View>
+              <View style={styles.sigLine}>
+                <Text style={styles.sigLabel}>Firma del conductor (al momento del cargue)</Text>
+                <Text style={styles.sigMeta}>
+                  {fmt(contract.driver_signed_name)} {contract.driver_signed_at ? `· ${fmtDateTime(contract.driver_signed_at)}` : ""}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        <Footer companyAddress={companyAddress} companyPhone={companyPhone} companyEmail={companyEmail} />
       </Page>
     </Document>
   );

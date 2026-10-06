@@ -146,6 +146,47 @@ async function doInit() {
       quantity INTEGER DEFAULT 1,
       condition TEXT,
       photo TEXT,
+      loaded BOOLEAN DEFAULT FALSE,
+      is_additional BOOLEAN DEFAULT FALSE,
+      driver_note TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS contract_addenda (
+      id TEXT PRIMARY KEY,
+      contract_id TEXT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      description TEXT NOT NULL,
+      amount TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS quotes (
+      id TEXT PRIMARY KEY,
+      token TEXT UNIQUE NOT NULL,
+      status TEXT DEFAULT 'nuevo',
+      client_name TEXT,
+      client_phone TEXT,
+      client_email TEXT,
+      origin_address TEXT,
+      destination_address TEXT,
+      origin_floor TEXT,
+      destination_floor TEXT,
+      moving_date TEXT,
+      moving_size TEXT,
+      notes TEXT,
+      price TEXT,
+      admin_notes TEXT,
+      contract_id TEXT REFERENCES contracts(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS quote_items (
+      id TEXT PRIMARY KEY,
+      quote_id TEXT NOT NULL REFERENCES quotes(id) ON DELETE CASCADE,
+      name TEXT,
+      category TEXT,
+      quantity INTEGER DEFAULT 1,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
@@ -183,6 +224,13 @@ async function doInit() {
     ALTER TABLE contracts ADD COLUMN IF NOT EXISTS insured_amount TEXT;
     ALTER TABLE contracts ADD COLUMN IF NOT EXISTS insurance_value TEXT;
     ALTER TABLE contracts ADD COLUMN IF NOT EXISTS declared_value TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS advance_received TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS driver_signature TEXT;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS driver_signed_at TIMESTAMPTZ;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS driver_signed_name TEXT;
+    ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS loaded BOOLEAN DEFAULT FALSE;
+    ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS is_additional BOOLEAN DEFAULT FALSE;
+    ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS driver_note TEXT;
   `);
 
   await seedDefault("admin_password_hash", bcrypt.hashSync("Mudalogic2026", 10));

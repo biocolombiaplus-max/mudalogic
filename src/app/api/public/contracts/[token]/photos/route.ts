@@ -33,6 +33,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return NextResponse.json({ error: "La imagen supera el tamaño máximo de 8MB" }, { status: 400 });
   }
 
+  const caption = form?.get("caption");
+
   const ext = EXT_BY_TYPE[file.type] ?? "";
   const filename = `${uuidv4()}${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -40,8 +42,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
 
   const id = uuidv4();
   await db
-    .prepare("INSERT INTO contract_photos (id, contract_id, url) VALUES (?, ?, ?)")
-    .run(id, contract.id as string, url);
+    .prepare("INSERT INTO contract_photos (id, contract_id, url, caption) VALUES (?, ?, ?, ?)")
+    .run(id, contract.id as string, url, typeof caption === "string" ? caption.slice(0, 100) : null);
 
-  return NextResponse.json({ id, url });
+  return NextResponse.json({ id, url, caption: typeof caption === "string" ? caption : null });
 }

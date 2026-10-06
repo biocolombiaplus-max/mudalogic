@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import db from "@/lib/db";
-import type { Contract, ContractPhoto, InventoryItem, TrackingEvent } from "@/lib/types";
+import type { Contract, ContractAddendum, ContractPhoto, InventoryItem, TrackingEvent } from "@/lib/types";
 import ContractDetail from "@/components/admin/ContractDetail";
 
 export const dynamic = "force-dynamic";
@@ -10,11 +10,12 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   const contract = await db.prepare("SELECT * FROM contracts WHERE id = ?").get<Contract>(id);
   if (!contract) notFound();
 
-  const [inventory, tracking, photos] = await Promise.all([
+  const [inventory, tracking, photos, addenda] = await Promise.all([
     db.prepare("SELECT * FROM inventory_items WHERE contract_id = ? ORDER BY created_at ASC").all<InventoryItem>(id),
     db.prepare("SELECT * FROM tracking_events WHERE contract_id = ? ORDER BY created_at DESC").all<TrackingEvent>(id),
     db.prepare("SELECT * FROM contract_photos WHERE contract_id = ? ORDER BY created_at ASC").all<ContractPhoto>(id),
+    db.prepare("SELECT * FROM contract_addenda WHERE contract_id = ? ORDER BY created_at ASC").all<ContractAddendum>(id),
   ]);
 
-  return <ContractDetail contract={contract} inventory={inventory} tracking={tracking} photos={photos} />;
+  return <ContractDetail contract={contract} inventory={inventory} tracking={tracking} photos={photos} addenda={addenda} />;
 }

@@ -56,6 +56,10 @@ export type Contract = {
   insured_amount: string | null;
   insurance_value: string | null;
   declared_value: string | null;
+  advance_received: string | null;
+  driver_signature: string | null;
+  driver_signed_at: string | null;
+  driver_signed_name: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -77,8 +81,57 @@ export type InventoryItem = {
   quantity: number;
   condition: string;
   photo: string | null;
+  loaded: boolean | null;
+  is_additional: boolean | null;
+  driver_note: string | null;
   created_at: string;
 };
+
+export type ContractAddendum = {
+  id: string;
+  contract_id: string;
+  description: string;
+  amount: string | null;
+  created_at: string;
+};
+
+export type Quote = {
+  id: string;
+  token: string;
+  status: string;
+  client_name: string;
+  client_phone: string;
+  client_email: string;
+  origin_address: string;
+  destination_address: string;
+  origin_floor: string | null;
+  destination_floor: string | null;
+  moving_date: string;
+  moving_size: string | null;
+  notes: string;
+  price: string | null;
+  admin_notes: string | null;
+  contract_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type QuoteItem = {
+  id: string;
+  quote_id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  created_at: string;
+};
+
+export const QUOTE_STATUSES = [
+  { value: "nuevo", label: "Nueva — esperando revisión", color: "bg-neutral-100 text-neutral-600" },
+  { value: "cotizado", label: "Cotizada — lista para enviar", color: "bg-blue-100 text-blue-700" },
+  { value: "enviado", label: "Enviada al cliente", color: "bg-purple-100 text-purple-700" },
+  { value: "aceptado", label: "Aceptada", color: "bg-emerald-100 text-emerald-700" },
+  { value: "rechazado", label: "Rechazada", color: "bg-red-100 text-red-700" },
+] as const;
 
 export type TrackingEvent = {
   id: string;
@@ -102,8 +155,15 @@ export const TRACKING_STATUSES = [
 export const CONTRACT_STATUSES = [
   { value: "borrador", label: "Borrador", color: "bg-neutral-100 text-neutral-600" },
   { value: "enviado", label: "Enviado al cliente", color: "bg-blue-100 text-blue-700" },
-  { value: "firmado", label: "Firmado", color: "bg-purple-100 text-purple-700" },
+  { value: "pendiente_anticipo", label: "Firmado por cliente — pendiente anticipo", color: "bg-amber-100 text-amber-700" },
+  { value: "firmado", label: "Firmado (anticipo confirmado)", color: "bg-purple-100 text-purple-700" },
   { value: "recogido", label: "Recogido", color: "bg-amber-100 text-amber-700" },
   { value: "en_transito", label: "En tránsito", color: "bg-cyan-100 text-cyan-700" },
   { value: "entregado", label: "Entregado", color: "bg-emerald-100 text-emerald-700" },
 ] as const;
+
+/** Fixed legal-representative data — always the same, never editable per contract. */
+export const LEGAL_REPRESENTATIVE = {
+  name: "MANUEL ALEJANDRO BARBOSA PÉREZ",
+  nit: "80089450-5",
+} as const;

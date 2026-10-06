@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
+import { getSetting } from "@/lib/settings";
 
 const CLIENT_EDITABLE_FIELDS = [
   "client_name",
@@ -15,6 +16,8 @@ const CLIENT_EDITABLE_FIELDS = [
   "declared_value",
 ];
 
+const LOCKED_STATUSES = ["pendiente_anticipo", "firmado", "recogido", "en_transito", "entregado"];
+
 function getContractByToken(token: string) {
   return db.prepare("SELECT * FROM contracts WHERE token = ?").get<Record<string, unknown>>(token);
 }
@@ -25,13 +28,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
   if (!contract) {
     return NextResponse.json({ error: "Contrato no encontrado" }, { status: 404 });
   }
-  const [inventory, tracking, photos] = await Promise.all([
+  const [inventory, tracking, photos, companyWhatsapp, companyEmail] = await Promise.all([
     db.prepare("SELECT * FROM inventory_items WHERE contract_id = ? ORDER BY created_at ASC").all(contract.id as string),
     db.prepare("SELECT * FROM tracking_events WHERE contract_id = ? ORDER BY created_at ASC").all(contract.id as string),
     db.prepare("SELECT * FROM contract_photos WHERE contract_id = ? ORDER BY created_at ASC").all(contract.id as string),
+    getSetting("site.whatsapp", ""),
+    getSetting("site.email", ""),
   ]);
 
-  return NextResponse.json({ contract, inventory, tracking, photos });
+  return NextResponse.json({ contract, inventory, tracking, photos, companyWhatsapp, companyEmail });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -40,7 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ to
   if (!contract) {
     return NextResponse.json({ error: "Contrato no encontrado" }, { status: 404 });
   }
-  if (contract.status === "firmado" || contract.status === "recogido" || contract.status === "en_transito" || contract.status === "entregado") {
+  if (LOCKED_STATUSES.includes(String(contract.status))) {
     return NextResponse.json(
       { error: "Este contrato ya fue firmado y no se puede modificar. Contacta a MudaLogic si necesitas un cambio." },
       { status: 409 }
@@ -64,22 +69,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ to
   }
 
   if (body.client_signature) {
-    updates.push("client_signature = ?", "client_signed_at = NOW()", "client_signed_name = ?");
+    updates.push("client_signature = ?", "client_signed_at = NOW()", "client_signed_name = ?", "status = 'pendiente_anticipo'");
     values.push(String(body.client_signature), String(body.client_signed_name ?? contract.client_name ?? "").slice(0, 200));
-  }
-  if (body.staff_signature) {
-    updates.push("staff_signature = ?", "staff_signed_at = NOW()", "staff_signed_name = ?");
-    values.push(String(body.staff_signature), String(body.staff_signed_name ?? "").slice(0, 200));
   }
 
   if (updates.length === 0) {
     return NextResponse.json({ error: "Nada que actualizar" }, { status: 400 });
-  }
-
-  const willBeSigned =
-    (body.client_signature || contract.client_signature) && (body.staff_signature || contract.staff_signature);
-  if (willBeSigned) {
-    updates.push("status = 'firmado'");
   }
 
   updates.push("updated_at = NOW()");

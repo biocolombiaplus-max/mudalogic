@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, FileSignature } from "lucide-react";
 import Link from "next/link";
+import { splitAdvanceBalance } from "@/lib/money";
 
 export default function NewContractPage() {
   const router = useRouter();
@@ -37,13 +38,14 @@ export default function NewContractPage() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function updateFreight(value: string) {
+    const { advance, balance } = splitAdvanceBalance(value);
+    setForm((f) => ({ ...f, freight_value: value, advance_value: advance, balance_due: balance }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!form.client_name || !form.client_phone) {
-      setError("El nombre y teléfono del cliente son obligatorios");
-      return;
-    }
     setLoading(true);
     const res = await fetch("/api/admin/contracts", {
       method: "POST",
@@ -72,50 +74,64 @@ export default function NewContractPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-navy">Nuevo contrato de servicio</h1>
           <p className="text-sm text-neutral-500">
-            Completa los datos básicos; el cliente completará el resto y firmará desde su celular.
+            No necesitas llenar los datos del cliente: genera el link y se lo envías — él mismo los diligencia y
+            firma desde su celular. Tú solo registras lo que te corresponde a ti: el conductor y los valores.
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-black/5 shadow-sm p-6 space-y-5">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Nombre completo del cliente *">
-            <input value={form.client_name} onChange={(e) => update("client_name", e.target.value)} className="input" />
-          </Field>
-          <Field label="Documento de identidad">
-            <input value={form.client_doc} onChange={(e) => update("client_doc", e.target.value)} className="input" />
-          </Field>
-        </div>
+        <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
+          {loading ? "Creando..." : "Generar link de contrato para el cliente"}
+        </button>
+        <p className="text-xs text-neutral-400 -mt-3">
+          Puedes dejar todo lo de abajo en blanco y completarlo después desde el detalle del contrato — o llenarlo
+          ya mismo si lo tienes a mano.
+        </p>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Teléfono / WhatsApp *">
-            <input value={form.client_phone} onChange={(e) => update("client_phone", e.target.value)} className="input" />
-          </Field>
-          <Field label="Correo electrónico">
-            <input value={form.client_email} onChange={(e) => update("client_email", e.target.value)} className="input" />
-          </Field>
-        </div>
+        <div className="pt-2 border-t border-neutral-100">
+          <p className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-3">
+            Datos del cliente (opcional — si no los llenas, el cliente los pone él mismo)
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Nombre completo del cliente">
+              <input value={form.client_name} onChange={(e) => update("client_name", e.target.value)} className="input" />
+            </Field>
+            <Field label="Documento de identidad">
+              <input value={form.client_doc} onChange={(e) => update("client_doc", e.target.value)} className="input" />
+            </Field>
+          </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Dirección de origen">
-            <input value={form.origin_address} onChange={(e) => update("origin_address", e.target.value)} className="input" />
-          </Field>
-          <Field label="Dirección de destino">
-            <input
-              value={form.destination_address}
-              onChange={(e) => update("destination_address", e.target.value)}
-              className="input"
-            />
-          </Field>
-        </div>
+          <div className="grid sm:grid-cols-2 gap-4 mt-4">
+            <Field label="Teléfono / WhatsApp">
+              <input value={form.client_phone} onChange={(e) => update("client_phone", e.target.value)} className="input" />
+            </Field>
+            <Field label="Correo electrónico">
+              <input value={form.client_email} onChange={(e) => update("client_email", e.target.value)} className="input" />
+            </Field>
+          </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Fecha de la mudanza">
-            <input type="date" value={form.moving_date} onChange={(e) => update("moving_date", e.target.value)} className="input" />
-          </Field>
-          <Field label="Precio acordado (COP)">
-            <input value={form.price} onChange={(e) => update("price", e.target.value)} placeholder="Ej: $850.000" className="input" />
-          </Field>
+          <div className="grid sm:grid-cols-2 gap-4 mt-4">
+            <Field label="Dirección de origen">
+              <input value={form.origin_address} onChange={(e) => update("origin_address", e.target.value)} className="input" />
+            </Field>
+            <Field label="Dirección de destino">
+              <input
+                value={form.destination_address}
+                onChange={(e) => update("destination_address", e.target.value)}
+                className="input"
+              />
+            </Field>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4 mt-4">
+            <Field label="Fecha de la mudanza">
+              <input type="date" value={form.moving_date} onChange={(e) => update("moving_date", e.target.value)} className="input" />
+            </Field>
+            <Field label="Precio acordado (COP)">
+              <input value={form.price} onChange={(e) => update("price", e.target.value)} placeholder="Ej: $850.000" className="input" />
+            </Field>
+          </div>
         </div>
 
         <Field label="Tipo de servicio">
@@ -148,15 +164,19 @@ export default function NewContractPage() {
           <p className="text-xs font-bold text-brand uppercase tracking-wide mb-3">Valores del servicio</p>
           <div className="grid sm:grid-cols-3 gap-4">
             <Field label="Valor del flete">
-              <input value={form.freight_value} onChange={(e) => update("freight_value", e.target.value)} placeholder="Ej: 1.400.000" className="input" />
+              <input value={form.freight_value} onChange={(e) => updateFreight(e.target.value)} placeholder="Ej: 1.400.000" className="input" />
             </Field>
-            <Field label="Valor del anticipo">
-              <input value={form.advance_value} onChange={(e) => update("advance_value", e.target.value)} placeholder="Ej: 200.000 (70%)" className="input" />
+            <Field label="Valor del anticipo (70%, automático)">
+              <input value={form.advance_value} onChange={(e) => update("advance_value", e.target.value)} placeholder="Se calcula solo" className="input" />
             </Field>
-            <Field label="Saldo pendiente">
-              <input value={form.balance_due} onChange={(e) => update("balance_due", e.target.value)} className="input" />
+            <Field label="Saldo pendiente (30%, automático)">
+              <input value={form.balance_due} onChange={(e) => update("balance_due", e.target.value)} placeholder="Se calcula solo" className="input" />
             </Field>
           </div>
+          <p className="text-[11px] text-neutral-400 mt-1.5">
+            El anticipo y el saldo se calculan solos como 70% / 30% del flete — puedes ajustarlos a mano si el
+            acuerdo con el cliente es distinto.
+          </p>
         </div>
 
         <div className="pt-2 border-t border-neutral-100">
@@ -184,7 +204,7 @@ export default function NewContractPage() {
         {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
 
         <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-          {loading ? "Creando..." : "Crear contrato y generar link"}
+          {loading ? "Creando..." : "Generar link de contrato para el cliente"}
         </button>
       </form>
 

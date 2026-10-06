@@ -27,6 +27,7 @@ const EDITABLE_FIELDS = [
   "insurance_company",
   "insured_amount",
   "insurance_value",
+  "advance_received",
 ];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

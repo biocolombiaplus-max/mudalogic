@@ -19,9 +19,14 @@ import {
   FileDown,
   Star,
   Camera,
+  BadgeCheck,
+  ClipboardCheck,
+  Receipt,
 } from "lucide-react";
-import type { Contract, ContractPhoto, InventoryItem, TrackingEvent } from "@/lib/types";
-import { CONTRACT_STATUSES, TRACKING_STATUSES } from "@/lib/types";
+import type { Contract, ContractAddendum, ContractPhoto, InventoryItem, TrackingEvent } from "@/lib/types";
+import { CONTRACT_STATUSES, TRACKING_STATUSES, LEGAL_REPRESENTATIVE } from "@/lib/types";
+import { splitAdvanceBalance } from "@/lib/money";
+import SignaturePad from "@/components/SignaturePad";
 
 function statusMeta(status: string) {
   return CONTRACT_STATUSES.find((s) => s.value === status) ?? CONTRACT_STATUSES[0];
@@ -32,11 +37,13 @@ export default function ContractDetail({
   inventory,
   tracking,
   photos,
+  addenda,
 }: {
   contract: Contract;
   inventory: InventoryItem[];
   tracking: TrackingEvent[];
   photos: ContractPhoto[];
+  addenda: ContractAddendum[];
 }) {
   const [form, setForm] = useState({
     client_name: contract.client_name || "",
@@ -61,10 +68,20 @@ export default function ContractDetail({
     insurance_company: contract.insurance_company || "",
     insured_amount: contract.insured_amount || "",
     insurance_value: contract.insurance_value || "",
+    advance_received: contract.advance_received || "",
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [signing, setSigning] = useState(false);
+  const [showSignPad, setShowSignPad] = useState(false);
+  const [repSignature, setRepSignature] = useState<string | null>(null);
+  const [signError, setSignError] = useState("");
+  const [staffSignature, setStaffSignature] = useState(contract.staff_signature);
+  const [staffSignedAt, setStaffSignedAt] = useState(contract.staff_signed_at);
+  const [addendaList, setAddendaList] = useState(addenda);
+  const [newAddendum, setNewAddendum] = useState({ description: "", amount: "" });
+  const [addingAddendum, setAddingAddendum] = useState(false);
   const [events, setEvents] = useState(tracking);
   const [newEvent, setNewEvent] = useState<{ status: string; note: string; location: string }>({
     status: TRACKING_STATUSES[1].value,
@@ -88,6 +105,34 @@ export default function ContractDetail({
 
   function update(key: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function updateFreight(value: string) {
+    const { advance, balance } = splitAdvanceBalance(value);
+    setForm((f) => ({ ...f, freight_value: value, advance_value: advance, balance_due: balance }));
+  }
+
+  async function handleSignRepresentative() {
+    setSignError("");
+    if (!repSignature) {
+      setSignError("Firma en el recuadro antes de continuar");
+      return;
+    }
+    setSigning(true);
+    const res = await fetch(`/api/admin/contracts/${contract.id}/sign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ signature: repSignature }),
+    });
+    setSigning(false);
+    if (!res.ok) {
+      setSignError("No se pudo registrar la firma");
+      return;
+    }
+    setStaffSignature(repSignature);
+    setStaffSignedAt(new Date().toISOString());
+    setShowSignPad(false);
+    update("status", "firmado");
   }
 
   async function handleSave() {
@@ -118,6 +163,13 @@ export default function ContractDetail({
     const subject = "Tu contrato de mudanza MudaLogic";
     const body = `Hola ${contract.client_name || ""},\n\nEste es el link para completar y firmar tu contrato de mudanza:\n${contractUrl}\n\nCódigo de rastreo: ${contract.token}\n${trackUrl}\n\nGracias por confiar en MudaLogic.`;
     window.open(`mailto:${contract.client_email || ""}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
+  }
+
+  function sendChecklistToDriver() {
+    const checklistUrl = `${origin}/carga/${contract.token}`;
+    const msg = `Hola ${contract.driver_name || ""}, aquí está el checklist de cargue de la mudanza de ${contract.client_name || "el cliente"} (código ${contract.token}). Revisa el inventario, marca lo que vas cargando y firma al terminar: ${checklistUrl}`;
+    const phone = (contract.driver_phone || "").replace(/\D/g, "");
+    window.open(`https://wa.me/${phone.startsWith("57") ? phone : "57" + phone}?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
   function reviewShare() {
@@ -157,7 +209,32 @@ export default function ContractDetail({
     await fetch(`/api/admin/contracts/${contract.id}/tracking?eventId=${eventId}`, { method: "DELETE" });
   }
 
+  async function addAddendum() {
+    if (!newAddendum.description.trim()) return;
+    setAddingAddendum(true);
+    const res = await fetch(`/api/admin/contracts/${contract.id}/addenda`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newAddendum),
+    });
+    const data = await res.json();
+    setAddingAddendum(false);
+    if (res.ok) {
+      setAddendaList([
+        ...addendaList,
+        { id: data.id, contract_id: contract.id, description: newAddendum.description, amount: newAddendum.amount, created_at: new Date().toISOString() },
+      ]);
+      setNewAddendum({ description: "", amount: "" });
+    }
+  }
+
+  async function removeAddendum(addendumId: string) {
+    setAddendaList((prev) => prev.filter((a) => a.id !== addendumId));
+    await fetch(`/api/admin/contracts/${contract.id}/addenda/${addendumId}`, { method: "DELETE" });
+  }
+
   const meta = statusMeta(form.status);
+  const additionalItems = inventory.filter((i) => i.is_additional);
 
   return (
     <div className="max-w-4xl">
@@ -274,6 +351,14 @@ export default function ContractDetail({
               <input value={form.vehicle_plate} onChange={(e) => update("vehicle_plate", e.target.value)} className="input" />
             </Field>
           </div>
+          {contract.driver_phone && (
+            <button
+              onClick={sendChecklistToDriver}
+              className="mt-4 flex items-center gap-1.5 text-sm font-bold text-emerald-700 bg-emerald-50 rounded-xl px-4 py-2.5 hover:bg-emerald-100"
+            >
+              <ClipboardCheck size={16} /> Enviar checklist de cargue al conductor
+            </button>
+          )}
           <p className="text-[11px] text-neutral-400 mt-3">
             El conductor verá estos datos (sin poder editarlos) cuando entre a firmar desde el link del contrato.
           </p>
@@ -286,12 +371,12 @@ export default function ContractDetail({
         <Card title="Valores del servicio y póliza">
           <div className="grid sm:grid-cols-3 gap-4">
             <Field label="Valor del flete">
-              <input value={form.freight_value} onChange={(e) => update("freight_value", e.target.value)} className="input" />
+              <input value={form.freight_value} onChange={(e) => updateFreight(e.target.value)} className="input" />
             </Field>
-            <Field label="Valor del anticipo">
+            <Field label="Anticipo (70%, automático)">
               <input value={form.advance_value} onChange={(e) => update("advance_value", e.target.value)} className="input" />
             </Field>
-            <Field label="Saldo pendiente">
+            <Field label="Saldo (30%, automático)">
               <input value={form.balance_due} onChange={(e) => update("balance_due", e.target.value)} className="input" />
             </Field>
           </div>
@@ -321,12 +406,75 @@ export default function ContractDetail({
           </button>
         </Card>
 
+        <Card title="Anticipo y firma del representante legal" icon={BadgeCheck}>
+          {!contract.client_signature ? (
+            <p className="text-sm text-neutral-400">El cliente todavía no ha firmado su contrato.</p>
+          ) : (
+            <>
+              <Field label="Anticipo recibido (valor confirmado)">
+                <input
+                  value={form.advance_received}
+                  onChange={(e) => update("advance_received", e.target.value)}
+                  placeholder="Ej: 980.000"
+                  className="input"
+                />
+              </Field>
+              <button onClick={handleSave} disabled={saving} className="btn-outline !text-navy !border-neutral-300 !py-2 text-xs mt-2.5">
+                {saved ? <Check size={14} /> : <Save size={14} />} Guardar anticipo
+              </button>
+
+              <div className="mt-4 pt-4 border-t border-neutral-100">
+                <p className="text-xs text-neutral-500 mb-2">
+                  El contrato se firma siempre como <b>{LEGAL_REPRESENTATIVE.name}</b>, NIT{" "}
+                  {LEGAL_REPRESENTATIVE.nit}.
+                </p>
+                {staffSignature ? (
+                  <p className="text-sm text-emerald-600 font-semibold flex items-center gap-1.5">
+                    <Check size={16} /> Firmado
+                    {staffSignedAt && ` · ${new Date(staffSignedAt).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}`}
+                  </p>
+                ) : !form.advance_received ? (
+                  <p className="text-xs text-amber-600 font-medium">
+                    Registra el anticipo recibido antes de firmar, para que el contrato quede con validez.
+                  </p>
+                ) : !showSignPad ? (
+                  <button onClick={() => setShowSignPad(true)} className="btn-primary !py-2.5 text-sm w-full">
+                    <PenLine size={16} /> Firmar como representante legal
+                  </button>
+                ) : (
+                  <div>
+                    <SignaturePad onChange={setRepSignature} height={160} />
+                    {signError && <p className="text-xs text-red-600 font-medium mt-2">{signError}</p>}
+                    <button
+                      onClick={handleSignRepresentative}
+                      disabled={signing}
+                      className="btn-primary !py-2.5 text-sm w-full mt-2 disabled:opacity-60"
+                    >
+                      {signing ? "Guardando..." : "Confirmar firma"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </Card>
+
         <div className="space-y-6">
           <Card title="Firmas">
             <div className="grid grid-cols-2 gap-4">
               <SignatureBox label="Firma del cliente" signature={contract.client_signature} name={contract.client_signed_name} date={contract.client_signed_at} />
-              <SignatureBox label="Firma del conductor" signature={contract.staff_signature} name={contract.staff_signed_name} date={contract.staff_signed_at} />
+              <SignatureBox label="Representante legal" signature={staffSignature} name={staffSignature ? LEGAL_REPRESENTATIVE.name : null} date={staffSignedAt} />
             </div>
+            {(contract.driver_signature || contract.driver_name) && (
+              <div className="mt-4 pt-4 border-t border-neutral-100">
+                <SignatureBox
+                  label="Firma del conductor (al cargue)"
+                  signature={contract.driver_signature}
+                  name={contract.driver_signed_name}
+                  date={contract.driver_signed_at}
+                />
+              </div>
+            )}
           </Card>
 
           <Card title={`Inventario (${inventory.length} artículos)`} icon={Package}>
@@ -335,7 +483,17 @@ export default function ContractDetail({
             ) : (
               <div className="grid grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
                 {inventory.map((item) => (
-                  <div key={item.id} className="rounded-lg border border-neutral-200 overflow-hidden">
+                  <div key={item.id} className="rounded-lg border border-neutral-200 overflow-hidden relative">
+                    {item.is_additional && (
+                      <span className="absolute top-1 left-1 z-10 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+                        ADICIONAL
+                      </span>
+                    )}
+                    {item.loaded && (
+                      <span className="absolute top-1 right-1 z-10 bg-emerald-500 text-white rounded-full p-0.5">
+                        <Check size={10} />
+                      </span>
+                    )}
                     <div className="relative aspect-square bg-neutral-100">
                       {item.photo ? (
                         <Image src={item.photo} alt={item.name} fill unoptimized className="object-cover" />
@@ -350,6 +508,7 @@ export default function ContractDetail({
                       <p className="text-[10px] text-neutral-500">
                         {item.category} · x{item.quantity}
                       </p>
+                      {item.driver_note && <p className="text-[10px] text-amber-600 mt-0.5">{item.driver_note}</p>}
                     </div>
                   </div>
                 ))}
@@ -369,6 +528,53 @@ export default function ContractDetail({
                 ))}
               </div>
             )}
+          </Card>
+
+          <Card title="Ajustes adicionales (cobros extra)" icon={Receipt}>
+            {additionalItems.length > 0 && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+                El conductor marcó {additionalItems.length} artículo{additionalItems.length !== 1 && "s"} adicional
+                {additionalItems.length !== 1 && "es"} que no estaba{additionalItems.length === 1 ? "" : "n"} en el
+                inventario original: {additionalItems.map((i) => i.name).join(", ")}. Agrega aquí el cobro
+                correspondiente.
+              </p>
+            )}
+            {addendaList.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {addendaList.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between gap-2 bg-neutral-50 rounded-lg px-3 py-2">
+                    <div>
+                      <p className="text-sm font-semibold text-navy">{a.description}</p>
+                      {a.amount && <p className="text-xs text-neutral-500">{a.amount}</p>}
+                    </div>
+                    <button onClick={() => removeAddendum(a.id)} className="text-neutral-300 hover:text-red-500 shrink-0">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+              <input
+                value={newAddendum.description}
+                onChange={(e) => setNewAddendum((v) => ({ ...v, description: e.target.value }))}
+                placeholder="Ej: Lavadora adicional no incluida en el contrato"
+                className="input"
+              />
+              <input
+                value={newAddendum.amount}
+                onChange={(e) => setNewAddendum((v) => ({ ...v, amount: e.target.value }))}
+                placeholder="Valor"
+                className="input !w-28"
+              />
+              <button onClick={addAddendum} disabled={addingAddendum} className="btn-primary !py-2 text-xs disabled:opacity-60">
+                <Plus size={14} />
+              </button>
+            </div>
+            <p className="text-[11px] text-neutral-400 mt-2">
+              Cada ajuste se agrega al PDF del contrato como un otrosí. Avísale al cliente el valor por WhatsApp antes
+              de sumarlo.
+            </p>
           </Card>
         </div>
       </div>

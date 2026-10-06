@@ -19,19 +19,19 @@ import {
   Trash2,
   Plus,
   PenLine,
-  Lock,
   CheckCircle2,
   ClipboardList,
   MapPinned,
   ShieldCheck,
-  IdCard,
   FileDown,
+  MessageCircle,
 } from "lucide-react";
 import SignaturePad from "@/components/SignaturePad";
 import type { Contract, ContractPhoto, InventoryItem } from "@/lib/types";
 
 const CATEGORIES = ["Sala", "Habitación", "Cocina", "Electrodomésticos", "Oficina", "Cajas", "Frágil / especial", "Otro"];
 const CONDITIONS = ["Excelente", "Bueno", "Con detalles previos", "Frágil - requiere cuidado especial"];
+const ROOM_AREAS = ["Sala", "Comedor", "Cocina", "Habitación 1", "Habitación 2", "Habitación 3", "Baño", "Otro espacio"];
 
 const CLAUSES: { title: string; body: string }[] = [
   {
@@ -67,12 +67,12 @@ const CLAUSES: { title: string; body: string }[] = [
     body: "Autorizas que cualquier comunicación sobre este servicio se haga por llamada, SMS, WhatsApp o correo electrónico, conforme a la Ley 527 de 1999.",
   },
   {
-    title: "9. Domicilio contractual y aceptación",
-    body: "Las partes fijan como domicilio contractual la ciudad de Cúcuta, Norte de Santander. Al firmar, declaras haber leído, entendido y aceptado íntegramente estas condiciones, con mérito probatorio conforme a los artículos 1602 del Código Civil y 822 del Código de Comercio.",
+    title: "9. Validez del contrato y domicilio contractual",
+    body: "Este contrato solo tiene validez una vez se haya girado el anticipo pactado. Las partes fijan como domicilio contractual la ciudad de Cúcuta, Norte de Santander. Al firmar, declaras haber leído, entendido y aceptado íntegramente estas condiciones, con mérito probatorio conforme a los artículos 1602 del Código Civil y 822 del Código de Comercio.",
   },
 ];
 
-type Step = "datos" | "inventario" | "firma_cliente" | "firma_staff" | "completado";
+type Step = "datos" | "inventario" | "firma_cliente" | "completado";
 
 export default function ContractFlow({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
@@ -80,6 +80,7 @@ export default function ContractFlow({ token }: { token: string }) {
   const [contract, setContract] = useState<Contract | null>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [photos, setPhotos] = useState<ContractPhoto[]>([]);
+  const [companyWhatsapp, setCompanyWhatsapp] = useState("");
   const [step, setStep] = useState<Step>("datos");
 
   useEffect(() => {
@@ -99,10 +100,9 @@ export default function ContractFlow({ token }: { token: string }) {
     setContract(data.contract);
     setInventory(data.inventory);
     setPhotos(data.photos || []);
-    if (data.contract.client_signature && data.contract.staff_signature) {
+    setCompanyWhatsapp(data.companyWhatsapp || "");
+    if (data.contract.client_signature) {
       setStep("completado");
-    } else if (data.contract.client_signature) {
-      setStep("firma_staff");
     }
     setLoading(false);
   }
@@ -152,6 +152,8 @@ export default function ContractFlow({ token }: { token: string }) {
           token={token}
           items={inventory}
           setItems={setInventory}
+          photos={photos}
+          setPhotos={setPhotos}
           onBack={() => setStep("datos")}
           onNext={() => setStep("firma_cliente")}
         />
@@ -165,26 +167,19 @@ export default function ContractFlow({ token }: { token: string }) {
           onBack={() => setStep("inventario")}
           onSigned={(c) => {
             setContract(c);
-            setStep("firma_staff");
-          }}
-        />
-      )}
-
-      {step === "firma_staff" && (
-        <StepFirmaStaff
-          token={token}
-          contract={contract}
-          photos={photos}
-          setPhotos={setPhotos}
-          onSigned={(c) => {
-            setContract(c);
             setStep("completado");
           }}
         />
       )}
 
       {step === "completado" && (
-        <StepCompletado token={token} contract={contract} inventory={inventory} photos={photos} />
+        <StepCompletado
+          token={token}
+          contract={contract}
+          inventory={inventory}
+          photos={photos}
+          companyWhatsapp={companyWhatsapp}
+        />
       )}
     </Shell>
   );
@@ -212,7 +207,6 @@ function Stepper({ current }: { current: Step }) {
     { id: "datos", label: "Datos" },
     { id: "inventario", label: "Inventario" },
     { id: "firma_cliente", label: "Tu firma" },
-    { id: "firma_staff", label: "Firma transportista" },
   ];
   const idx = steps.findIndex((s) => s.id === current);
 
@@ -391,12 +385,16 @@ function StepInventario({
   token,
   items,
   setItems,
+  photos,
+  setPhotos,
   onBack,
   onNext,
 }: {
   token: string;
   items: InventoryItem[];
   setItems: (items: InventoryItem[]) => void;
+  photos: ContractPhoto[];
+  setPhotos: (photos: ContractPhoto[]) => void;
   onBack: () => void;
   onNext: () => void;
 }) {
@@ -404,20 +402,9 @@ function StepInventario({
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [quantity, setQuantity] = useState(1);
   const [condition, setCondition] = useState(CONDITIONS[0]);
-  const [photo, setPhoto] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
-
-  async function handlePhoto(file: File) {
-    setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch(`/api/public/contracts/${token}/upload`, { method: "POST", body: fd });
-    const data = await res.json();
-    setUploading(false);
-    if (res.ok) setPhoto(data.url);
-  }
+  const [uploadingArea, setUploadingArea] = useState<string | null>(null);
 
   async function addItem() {
     setError("");
@@ -429,7 +416,7 @@ function StepInventario({
     const res = await fetch(`/api/public/contracts/${token}/inventory`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, category, quantity, condition, photo }),
+      body: JSON.stringify({ name, category, quantity, condition }),
     });
     const data = await res.json();
     setAdding(false);
@@ -439,16 +426,33 @@ function StepInventario({
     }
     setItems([
       ...items,
-      { id: data.id, contract_id: "", name, category, quantity, condition, photo, created_at: new Date().toISOString() },
+      { id: data.id, contract_id: "", name, category, quantity, condition, photo: null, loaded: false, is_additional: false, driver_note: null, created_at: new Date().toISOString() },
     ]);
     setName("");
     setQuantity(1);
-    setPhoto("");
   }
 
   async function removeItem(id: string) {
     setItems(items.filter((i) => i.id !== id));
     await fetch(`/api/public/contracts/${token}/inventory/${id}`, { method: "DELETE" });
+  }
+
+  async function handleAreaPhoto(area: string, file: File) {
+    setUploadingArea(area);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("caption", area);
+    const res = await fetch(`/api/public/contracts/${token}/photos`, { method: "POST", body: fd });
+    const data = await res.json();
+    setUploadingArea(null);
+    if (res.ok) {
+      setPhotos([...photos, { id: data.id, contract_id: "", url: data.url, caption: area, created_at: new Date().toISOString() }]);
+    }
+  }
+
+  async function removePhoto(id: string) {
+    setPhotos(photos.filter((p) => p.id !== id));
+    await fetch(`/api/public/contracts/${token}/photos/${id}`, { method: "DELETE" });
   }
 
   return (
@@ -457,7 +461,8 @@ function StepInventario({
         <Package size={20} className="text-brand" /> Inventario de la mudanza
       </h1>
       <p className="text-sm text-neutral-500 mt-1">
-        Agrega los objetos que vamos a transportar. Puedes tomar una foto de cada uno para que quede registrada en el contrato.
+        Agrega rápido los objetos que vamos a transportar — al final tomas unas pocas fotos por espacio, no una por
+        artículo.
       </p>
 
       <div className="mt-6 grid sm:grid-cols-2 gap-4">
@@ -493,32 +498,6 @@ function StepInventario({
         </Field>
       </div>
 
-      <div className="mt-4">
-        <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">Foto (opcional)</span>
-        <div className="mt-1.5 flex items-center gap-3">
-          {photo && (
-            <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-neutral-200">
-              <Image src={photo} alt="foto" fill unoptimized className="object-cover" />
-            </div>
-          )}
-          <label className="flex items-center gap-2 text-sm font-semibold text-brand cursor-pointer border border-brand/30 rounded-xl px-4 py-2.5 hover:bg-brand/5">
-            {uploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
-            {uploading ? "Subiendo..." : "Tomar / subir foto"}
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handlePhoto(f);
-                e.target.value = "";
-              }}
-            />
-          </label>
-        </div>
-      </div>
-
       {error && <p className="mt-3 text-sm text-red-600 font-medium">{error}</p>}
 
       <button
@@ -537,14 +516,8 @@ function StepInventario({
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {items.map((item) => (
               <div key={item.id} className="flex items-center gap-3 bg-neutral-50 rounded-xl px-3 py-2">
-                <div className="relative w-10 h-10 rounded-md overflow-hidden bg-neutral-200 shrink-0">
-                  {item.photo ? (
-                    <Image src={item.photo} alt={item.name} fill unoptimized className="object-cover" />
-                  ) : (
-                    <div className="flex items-center justify-center w-full h-full text-neutral-400">
-                      <Package size={14} />
-                    </div>
-                  )}
+                <div className="flex items-center justify-center w-10 h-10 rounded-md bg-neutral-200 shrink-0 text-neutral-400">
+                  <Package size={14} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-navy truncate">{item.name}</p>
@@ -560,6 +533,67 @@ function StepInventario({
           </div>
         </div>
       )}
+
+      <div className="mt-6 border-t border-neutral-100 pt-5">
+        <p className="text-xs font-bold text-neutral-500 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+          <Camera size={14} /> Fotos por espacio ({photos.length})
+        </p>
+        <p className="text-xs text-neutral-400 mb-3">
+          Toma una foto de cada espacio (sala, comedor, habitaciones, baños) donde se vean los objetos — mucho más
+          rápido que una foto por artículo, y queda igual de claro en el contrato.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {ROOM_AREAS.map((area) => {
+            const done = photos.some((p) => p.caption === area);
+            return (
+              <label
+                key={area}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-full border cursor-pointer ${
+                  done ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-white text-brand border-brand/30 hover:bg-brand/5"
+                }`}
+              >
+                {uploadingArea === area ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : done ? (
+                  <CheckCircle2 size={13} />
+                ) : (
+                  <Camera size={13} />
+                )}
+                {area}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleAreaPhoto(area, f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            );
+          })}
+        </div>
+        {photos.length > 0 && (
+          <div className="grid grid-cols-4 gap-2 mt-3">
+            {photos.map((p) => (
+              <div key={p.id} className="relative aspect-square rounded-lg overflow-hidden border border-neutral-200 group">
+                <Image src={p.url} alt={p.caption || "Foto"} fill unoptimized className="object-cover" />
+                <span className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-[9px] text-center py-0.5 truncate px-1">
+                  {p.caption}
+                </span>
+                <button
+                  onClick={() => removePhoto(p.id)}
+                  className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100"
+                >
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="mt-6 flex gap-3">
         <button onClick={onBack} className="btn-outline !text-navy !border-neutral-300 flex-1">
@@ -633,6 +667,7 @@ function StepFirmaCliente({
       client_signed_name: fullName,
       has_insurance: hasInsurance,
       declared_value: declaredValue,
+      status: "pendiente_anticipo",
     });
   }
 
@@ -645,21 +680,27 @@ function StepFirmaCliente({
       <div className="mt-4 rounded-xl bg-neutral-50 border border-neutral-100 p-4 text-sm text-neutral-600 leading-relaxed">
         <p>
           Por medio del presente documento, <strong>{fullName || "el cliente"}</strong>, identificado con documento{" "}
-          {contract.client_doc || "___________"}, contrata a <strong>MudaLogic</strong> para la prestación del
-          servicio de mudanza/trasteo nacional desde <strong>{contract.origin_address || "el origen indicado"}</strong>{" "}
-          hacia <strong>{contract.destination_address || "el destino indicado"}</strong>
+          {contract.client_doc || "___________"}, contrata a <strong>MudaLogic</strong> (representada legalmente por
+          Manuel Alejandro Barbosa Pérez, NIT 80089450-5) para la prestación del servicio de mudanza/trasteo nacional
+          desde <strong>{contract.origin_address || "el origen indicado"}</strong> hacia{" "}
+          <strong>{contract.destination_address || "el destino indicado"}</strong>
           {contract.moving_date ? `, con fecha estimada del ${contract.moving_date}` : ""}.
         </p>
         <p className="mt-2">
           El servicio incluye empaque, cargue, transporte, descargue y desempaque de los bienes relacionados en el
           inventario adjunto ({inventory.length} artículo{inventory.length !== 1 && "s"}), con su respectiva
-          condición y evidencia fotográfica. Valor acordado del servicio: <strong>{contract.price || "a confirmar"}</strong>.
+          condición y evidencia fotográfica. Valor acordado del servicio: <strong>{contract.freight_value || contract.price || "a confirmar"}</strong>.
         </p>
         {contract.notes && (
           <p className="mt-2">
             <strong>Notas adicionales:</strong> {contract.notes}
           </p>
         )}
+      </div>
+
+      <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 font-medium">
+        ⚠️ Este contrato solo tiene validez una vez realices el pago del anticipo acordado. Al firmar, tu contrato
+        queda enviado a MudaLogic para su revisión y confirmación.
       </div>
 
       <div className="mt-4 rounded-xl border border-neutral-200 p-4 max-h-56 overflow-y-auto">
@@ -738,204 +779,32 @@ function StepFirmaCliente({
   );
 }
 
-/* ---------------- Step 4: firma staff ---------------- */
-
-function StepFirmaStaff({
-  token,
-  contract,
-  photos,
-  setPhotos,
-  onSigned,
-}: {
-  token: string;
-  contract: Contract;
-  photos: ContractPhoto[];
-  setPhotos: (photos: ContractPhoto[]) => void;
-  onSigned: (c: Contract) => void;
-}) {
-  const [unlocked, setUnlocked] = useState(false);
-  const [password, setPassword] = useState("");
-  const [staffName, setStaffName] = useState(contract.driver_name || "");
-  const [signature, setSignature] = useState<string | null>(null);
-  const [error, setError] = useState("");
-  const [checking, setChecking] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-
-  async function handlePhoto(file: File) {
-    setUploadingPhoto(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch(`/api/public/contracts/${token}/photos`, { method: "POST", body: fd });
-    const data = await res.json();
-    setUploadingPhoto(false);
-    if (res.ok) {
-      setPhotos([...photos, { id: data.id, contract_id: contract.id, url: data.url, caption: null, created_at: new Date().toISOString() }]);
-    }
-  }
-
-  async function removePhoto(id: string) {
-    setPhotos(photos.filter((p) => p.id !== id));
-    await fetch(`/api/public/contracts/${token}/photos/${id}`, { method: "DELETE" });
-  }
-
-  async function verify() {
-    setError("");
-    setChecking(true);
-    const res = await fetch(`/api/public/contracts/${token}/verify-staff`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    setChecking(false);
-    if (!res.ok) {
-      setError("Clave incorrecta. Pide la clave de acceso al equipo de MudaLogic.");
-      return;
-    }
-    setUnlocked(true);
-  }
-
-  async function handleSign() {
-    setError("");
-    if (!staffName.trim()) {
-      setError("Escribe el nombre de quien recoge la mudanza");
-      return;
-    }
-    if (!signature) {
-      setError("Firma en el recuadro antes de continuar");
-      return;
-    }
-    setSaving(true);
-    const res = await fetch(`/api/public/contracts/${token}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ staff_signature: signature, staff_signed_name: staffName }),
-    });
-    setSaving(false);
-    if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
-      setError(d.error || "No se pudo registrar la firma");
-      return;
-    }
-    onSigned({ ...contract, staff_signature: signature, staff_signed_name: staffName });
-  }
-
-  return (
-    <Card>
-      <h1 className="text-xl font-extrabold text-navy flex items-center gap-2">
-        <Truck size={20} className="text-brand" /> Firma del conductor
-      </h1>
-      <p className="text-sm text-neutral-500 mt-1">
-        ¡Gracias {contract.client_signed_name || contract.client_name}! Tu firma quedó registrada. Este paso lo
-        completa el conductor de MudaLogic al momento de recoger la mudanza.
-      </p>
-
-      {!unlocked ? (
-        <div className="mt-6">
-          <Field label="Clave de acceso del equipo MudaLogic" icon={<Lock size={14} />}>
-            <input
-              type="password"
-              className="pinput"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Solo para personal de MudaLogic"
-            />
-          </Field>
-          {error && <p className="mt-2 text-sm text-red-600 font-medium">{error}</p>}
-          <button onClick={verify} disabled={checking} className="btn-primary mt-4 w-full disabled:opacity-60">
-            {checking ? "Verificando..." : "Desbloquear firma"}
-          </button>
-        </div>
-      ) : (
-        <div className="mt-6">
-          {(contract.driver_name || contract.vehicle_plate) && (
-            <div className="rounded-xl bg-neutral-50 border border-neutral-100 p-4 mb-5">
-              <p className="text-xs font-bold text-neutral-500 uppercase tracking-wide flex items-center gap-1.5 mb-2">
-                <IdCard size={14} /> Datos del conductor registrados por MudaLogic
-              </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-neutral-700">
-                <p><span className="text-neutral-400">Conductor:</span> {contract.driver_name || "—"}</p>
-                <p><span className="text-neutral-400">Cédula:</span> {contract.driver_doc || "—"}</p>
-                <p><span className="text-neutral-400">Placa:</span> {contract.vehicle_plate || "—"}</p>
-                <p><span className="text-neutral-400">Teléfono:</span> {contract.driver_phone || "—"}</p>
-              </div>
-            </div>
-          )}
-
-          <Field label="Confirma tu nombre" icon={<User size={14} />}>
-            <input className="pinput" value={staffName} onChange={(e) => setStaffName(e.target.value)} />
-          </Field>
-
-          <div className="mt-5">
-            <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide flex items-center gap-1.5">
-              <Camera size={14} /> Fotos de la carga ({photos.length})
-            </span>
-            <p className="text-xs text-neutral-400 mt-0.5 mb-2">
-              Sube fotos de cómo quedó cargado el camión — quedan como evidencia en la orden de servicio.
-            </p>
-            {photos.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 mb-3">
-                {photos.map((p) => (
-                  <div key={p.id} className="relative aspect-square rounded-lg overflow-hidden border border-neutral-200 group">
-                    <Image src={p.url} alt="Foto de carga" fill unoptimized className="object-cover" />
-                    <button
-                      onClick={() => removePhoto(p.id)}
-                      className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <label className="flex items-center justify-center gap-2 text-sm font-semibold text-brand cursor-pointer border-2 border-dashed border-brand/30 rounded-xl px-4 py-3 hover:bg-brand/5">
-              {uploadingPhoto ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
-              {uploadingPhoto ? "Subiendo..." : "Tomar / subir foto de la carga"}
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handlePhoto(f);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-          </div>
-
-          <div className="mt-5">
-            <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide flex items-center gap-1.5">
-              <PenLine size={14} /> Firma del conductor
-            </span>
-            <div className="mt-1.5">
-              <SignaturePad onChange={setSignature} />
-            </div>
-          </div>
-          {error && <p className="mt-3 text-sm text-red-600 font-medium">{error}</p>}
-          <button onClick={handleSign} disabled={saving} className="btn-primary mt-5 w-full disabled:opacity-60">
-            {saving ? "Guardando..." : "Confirmar recogida y firmar"}
-          </button>
-        </div>
-      )}
-    </Card>
-  );
-}
-
-/* ---------------- Step 5: completado ---------------- */
+/* ---------------- Step 4: completado ---------------- */
 
 function StepCompletado({
   token,
   contract,
   inventory,
   photos,
+  companyWhatsapp,
 }: {
   token: string;
   contract: Contract;
   inventory: InventoryItem[];
   photos: ContractPhoto[];
+  companyWhatsapp: string;
 }) {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const contractUrl = `${origin}/contrato/${token}`;
+  const pdfUrl = `${origin}/api/public/contracts/${token}/pdf`;
+  const representativeSigned = Boolean(contract.staff_signature);
+
+  function sendToCompany() {
+    const msg = `Hola MudaLogic, soy ${contract.client_signed_name || contract.client_name} y acabo de firmar mi contrato de mudanza (código ${token}).\n\nPDF del contrato: ${pdfUrl}\nLink: ${contractUrl}\n\nQuedo atento(a) a la confirmación una vez realice el anticipo.`;
+    const phone = (companyWhatsapp || "").replace(/\D/g, "");
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+  }
+
   return (
     <Card>
       <div className="text-center py-4">
@@ -943,9 +812,20 @@ function StepCompletado({
         <h1 className="mt-4 text-xl font-extrabold text-navy">¡Contrato firmado con éxito!</h1>
         <p className="mt-2 text-sm text-neutral-500 max-w-sm mx-auto">
           Tu mudanza quedó registrada con {inventory.length} artículo{inventory.length !== 1 && "s"}
-          {photos.length > 0 && ` y ${photos.length} foto${photos.length !== 1 ? "s" : ""} de la carga`}. Guarda tu
-          código de rastreo para seguir el estado de tu mudanza.
+          {photos.length > 0 && ` y ${photos.length} foto${photos.length !== 1 ? "s" : ""} de los espacios`}.
         </p>
+
+        <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 font-medium max-w-sm mx-auto">
+          ⚠️ Tu contrato queda <strong>pendiente de validez</strong> hasta que realices el anticipo y MudaLogic lo
+          confirme. Envíalo ahora por WhatsApp para agilizar la confirmación.
+        </div>
+
+        <div className="mt-5">
+          <button onClick={sendToCompany} className="btn-whatsapp">
+            <MessageCircle size={18} /> Enviar contrato firmado por WhatsApp
+          </button>
+        </div>
+
         <div className="mt-5 inline-flex items-center gap-2 bg-neutral-100 rounded-full px-5 py-2.5">
           <MapPinned size={16} className="text-brand" />
           <code className="font-bold text-navy">{token}</code>
@@ -955,7 +835,7 @@ function StepCompletado({
             Rastrear mi mudanza <ArrowRight size={18} />
           </Link>
           <a
-            href={`/api/public/contracts/${token}/pdf`}
+            href={pdfUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-outline !text-navy !border-neutral-300"
@@ -967,7 +847,16 @@ function StepCompletado({
 
       <div className="mt-6 border-t border-neutral-100 pt-5 grid grid-cols-2 gap-4">
         <SignaturePreview label="Firma del cliente" src={contract.client_signature} name={contract.client_signed_name} />
-        <SignaturePreview label="Firma del conductor" src={contract.staff_signature} name={contract.staff_signed_name} />
+        <div>
+          <p className="text-xs font-bold text-neutral-500 uppercase tracking-wide mb-1.5">Firma del representante legal</p>
+          <div className="relative aspect-[3/2] rounded-lg border border-neutral-200 bg-neutral-50 flex items-center justify-center">
+            {representativeSigned ? (
+              <Image src={contract.staff_signature!} alt="Firma del representante" fill unoptimized className="object-contain p-2" />
+            ) : (
+              <span className="text-xs text-neutral-400 text-center px-3">Pendiente — MudaLogic firma al confirmar el anticipo</span>
+            )}
+          </div>
+        </div>
       </div>
     </Card>
   );
