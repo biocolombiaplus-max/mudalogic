@@ -58,7 +58,7 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
             </a>
           </div>
 
-          <div className="mt-12 flex flex-wrap justify-center sm:justify-start gap-x-10 gap-y-5">
+          <div className="mt-12 grid grid-cols-2 gap-x-6 gap-y-6 justify-items-center text-center sm:flex sm:flex-wrap sm:justify-start sm:text-left sm:gap-x-10 sm:gap-y-5 w-full sm:w-auto">
             <Stat value={`${stats.years}+`} label="años de experiencia" />
             <Stat value={`${Number(stats.moves).toLocaleString("es-CO")}+`} label="mudanzas realizadas" />
             <Stat value={stats.cities} label="ciudades cubiertas" />

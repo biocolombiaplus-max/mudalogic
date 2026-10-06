@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { SiteContent } from "@/lib/settings";
 import Header from "./Header";
 import Hero from "./Hero";
+import RoutesBanner from "./RoutesBanner";
 import TrustBadges from "./TrustBadges";
 import Services from "./Services";
 import HowItWorks from "./HowItWorks";
@@ -43,6 +44,7 @@ export default function LandingClient({ content }: { content: SiteContent }) {
           stats={content.stats}
           onOpenQuote={openQuote}
         />
+        <RoutesBanner />
         <TrustBadges badges={content.trustBadges} />
         <Services services={content.services} />
         <HowItWorks />
