@@ -51,7 +51,7 @@ export default function RoutesBanner() {
           <span className="text-xs font-bold uppercase tracking-wide">Cobertura nacional</span>
         </div>
         <div className="h-px flex-1 bg-white/10" />
-        <span className="text-xs text-white/50 shrink-0 hidden sm:inline">Rutas frecuentes, toda Colombia</span>
+        <span className="text-xs text-white/50 shrink-0 hidden sm:inline">🎃 Rutas frecuentes, toda Colombia</span>
       </div>
 
       <div className="relative overflow-hidden">

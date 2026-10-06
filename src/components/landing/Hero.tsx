@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ShieldCheck, Star, Truck, ArrowRight, MessageCircle } from "lucide-react";
+import { ShieldCheck, Star, ArrowRight, MessageCircle } from "lucide-react";
 
 type Props = {
   title: string;
@@ -34,11 +34,37 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
         <div className="absolute inset-0 bg-gradient-to-b from-navy/70 via-navy/80 to-navy" />
       </div>
 
+      <div className="absolute inset-0 z-[6] overflow-hidden pointer-events-none select-none" aria-hidden>
+        <span
+          className="absolute -top-6 -left-6 text-8xl sm:text-9xl opacity-[0.06] rotate-[-12deg]"
+        >
+          🕸️
+        </span>
+        <span
+          className="absolute top-8 right-6 sm:top-12 sm:right-16 text-2xl sm:text-4xl opacity-35 animate-float"
+          style={{ animationDelay: "0.3s" }}
+        >
+          🦇
+        </span>
+        <span
+          className="hidden sm:inline absolute top-28 right-44 text-xl opacity-25 animate-float"
+          style={{ animationDelay: "1.6s", animationDuration: "6.5s" }}
+        >
+          🦇
+        </span>
+        <span
+          className="absolute bottom-8 left-3 sm:bottom-20 sm:left-10 text-2xl sm:text-4xl opacity-25 animate-float"
+          style={{ animationDelay: "0.9s", animationDuration: "5.8s" }}
+        >
+          🎃
+        </span>
+      </div>
+
       <div className="container-page relative z-10 py-28 sm:py-32 lg:py-40">
         <div className="max-w-3xl mx-auto sm:mx-0 flex flex-col items-center sm:items-start text-center sm:text-left animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 text-white/90 text-xs font-semibold px-4 py-2 mb-6 backdrop-blur">
-            <Truck size={14} className="text-brand-light" />
-            Mudanzas nacionales · Cúcuta &amp; Medellín para toda Colombia
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-orange-400/30 text-white/90 text-xs font-semibold px-4 py-2 mb-6 backdrop-blur">
+            <span className="text-sm leading-none">🎃</span>
+            Modo Halloween · Mudanzas sin sustos, toda Colombia
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.08] text-white tracking-tight">
