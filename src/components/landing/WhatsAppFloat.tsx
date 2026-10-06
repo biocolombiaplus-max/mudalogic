@@ -7,7 +7,7 @@ export default function WhatsAppFloat({ href }: { href: string }) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Escríbenos por WhatsApp"
-      className="fixed z-40 w-15 h-15 rounded-full bg-[#25d366] text-white flex items-center justify-center shadow-2xl shadow-black/30 hover:scale-110 active:scale-95 transition-transform animate-float"
+      className="hidden lg:flex fixed z-40 w-15 h-15 rounded-full bg-[#25d366] text-white items-center justify-center shadow-2xl shadow-black/30 hover:scale-110 active:scale-95 transition-transform animate-float"
       style={{
         width: 60,
         height: 60,

@@ -19,7 +19,7 @@ export default function Footer({
   whatsappHref,
 }: Props) {
   return (
-    <footer id="contacto" className="bg-navy text-white pt-20 pb-8">
+    <footer id="contacto" className="bg-navy text-white pt-20 pb-24 lg:pb-8">
       <div className="container-page grid md:grid-cols-4 gap-10">
         <div>
           {logo ? (

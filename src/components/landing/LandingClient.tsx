@@ -16,6 +16,7 @@ import TrackingTeaser from "./TrackingTeaser";
 import CTASection from "./CTASection";
 import Footer from "./Footer";
 import WhatsAppFloat from "./WhatsAppFloat";
+import QuoteStickyBar from "./QuoteStickyBar";
 import MetaPixel from "@/components/analytics/MetaPixel";
 
 export default function LandingClient({ content }: { content: SiteContent }) {
@@ -70,6 +71,7 @@ export default function LandingClient({ content }: { content: SiteContent }) {
         whatsappHref={whatsappHref}
       />
       <WhatsAppFloat href={whatsappHref} />
+      <QuoteStickyBar onOpenQuote={openQuote} whatsappHref={whatsappHref} />
     </>
   );
 }
