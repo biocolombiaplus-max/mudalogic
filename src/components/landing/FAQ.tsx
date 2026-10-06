@@ -16,8 +16,11 @@ export default function FAQ({ items }: { items: Item[] }) {
     <section id="preguntas" className="relative py-14 sm:py-20 lg:py-24 bg-neutral-50 overflow-hidden">
       <HalloweenDecor
         items={[
-          { emoji: "👻", className: "top-6 right-4 sm:right-16 text-3xl opacity-45 animate-spooky-drift", style: { animationDuration: "6.2s" } },
-          { emoji: "🕷️", className: "bottom-10 left-4 sm:left-12 text-2xl sm:text-3xl opacity-45 animate-spooky-sway", style: { animationDuration: "3.4s", animationDelay: "1s" } },
+          { emoji: "👻", className: "top-[5%] right-2 sm:right-16 text-3xl opacity-50 animate-spooky-drift", style: { animationDuration: "6.2s" } },
+          { emoji: "🎃", className: "top-[30%] left-1 sm:left-10 text-3xl opacity-45 animate-spooky-bob", style: { animationDuration: "4.8s", animationDelay: "0.4s" } },
+          { emoji: "🕸️", className: "top-[52%] -right-8 text-7xl opacity-15 -rotate-6" },
+          { emoji: "🕷️", className: "top-[75%] left-2 sm:left-12 text-2xl sm:text-3xl opacity-50 animate-spooky-sway", style: { animationDuration: "3.4s", animationDelay: "1s" } },
+          { emoji: "🦇", className: "top-[92%] right-2 sm:right-12 text-3xl opacity-45 animate-spooky-drift", style: { animationDuration: "5.4s", animationDelay: "1.3s" } },
         ]}
       />
       <div className="container-page max-w-3xl relative z-10">

@@ -13,8 +13,10 @@ export default function Gallery({ images }: { images: Img[] }) {
     <section id="galeria" className="relative py-14 sm:py-20 lg:py-24 bg-white overflow-hidden">
       <HalloweenDecor
         items={[
-          { emoji: "👻", className: "top-8 left-4 sm:left-16 text-3xl sm:text-4xl opacity-45 animate-spooky-bob", style: { animationDuration: "5s" } },
-          { emoji: "🕸️", className: "-bottom-10 -right-10 text-9xl opacity-[0.07] -rotate-12" },
+          { emoji: "👻", className: "top-[6%] left-2 sm:left-16 text-3xl sm:text-4xl opacity-50 animate-spooky-bob", style: { animationDuration: "5s" } },
+          { emoji: "🦇", className: "top-[38%] right-1 sm:right-14 text-3xl opacity-50 animate-spooky-sway", style: { animationDuration: "4s", animationDelay: "0.7s" } },
+          { emoji: "🎃", className: "top-[68%] left-1 sm:left-10 text-3xl opacity-45 animate-spooky-bob", style: { animationDuration: "5.2s", animationDelay: "1s" } },
+          { emoji: "🕸️", className: "-bottom-10 -right-10 text-9xl opacity-20 -rotate-12 drop-shadow-[0_2px_10px_rgba(0,0,0,0.2)]" },
         ]}
       />
       <div className="container-page relative z-10">

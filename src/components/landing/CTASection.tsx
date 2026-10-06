@@ -13,8 +13,9 @@ export default function CTASection({
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_10%_10%,white,transparent_35%)]" />
       <HalloweenDecor
         items={[
-          { emoji: "👻", className: "top-4 right-6 sm:right-20 text-4xl opacity-70 animate-spooky-bob", style: { animationDuration: "5s" } },
-          { emoji: "🎃", className: "bottom-2 left-4 sm:left-16 text-3xl sm:text-4xl opacity-70 animate-spooky-sway", style: { animationDuration: "4.2s", animationDelay: "0.7s" } },
+          { emoji: "👻", className: "top-[8%] right-2 sm:right-20 text-4xl opacity-80 animate-spooky-bob", style: { animationDuration: "5s" } },
+          { emoji: "🕸️", className: "top-[40%] -left-8 text-8xl opacity-20 rotate-[-10deg]" },
+          { emoji: "🎃", className: "top-[78%] left-2 sm:left-16 text-3xl sm:text-4xl opacity-80 animate-spooky-sway", style: { animationDuration: "4.2s", animationDelay: "0.7s" } },
         ]}
       />
       <div className="container-page relative z-10 text-center">

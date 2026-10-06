@@ -9,8 +9,10 @@ export default function Testimonials({ testimonials }: { testimonials: T[] }) {
     <section id="testimonios" className="relative py-14 sm:py-20 lg:py-24 bg-white overflow-hidden">
       <HalloweenDecor
         items={[
-          { emoji: "🦇", className: "top-10 right-6 sm:right-20 text-3xl opacity-50 animate-spooky-sway", style: { animationDuration: "3.8s" } },
-          { emoji: "🎃", className: "bottom-6 left-4 sm:left-14 text-3xl sm:text-4xl opacity-45 animate-spooky-bob", style: { animationDuration: "5.6s", animationDelay: "0.5s" } },
+          { emoji: "🦇", className: "top-[6%] right-2 sm:right-20 text-3xl opacity-50 animate-spooky-sway", style: { animationDuration: "3.8s" } },
+          { emoji: "🕸️", className: "top-[32%] -left-8 text-7xl opacity-15 rotate-[10deg]" },
+          { emoji: "🕷️", className: "top-[60%] right-1 sm:right-10 text-2xl sm:text-3xl opacity-50 animate-spooky-bob", style: { animationDuration: "4.4s", animationDelay: "0.9s" } },
+          { emoji: "🎃", className: "top-[88%] left-2 sm:left-14 text-3xl sm:text-4xl opacity-45 animate-spooky-bob", style: { animationDuration: "5.6s", animationDelay: "0.5s" } },
         ]}
       />
       <div className="container-page relative z-10">

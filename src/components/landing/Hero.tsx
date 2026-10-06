@@ -35,10 +35,13 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
       </div>
 
       <div className="absolute inset-0 z-[6] overflow-hidden pointer-events-none select-none" aria-hidden>
-        <span className="absolute -top-8 -left-10 text-9xl sm:text-[11rem] opacity-55 rotate-[-12deg] drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]">
+        <span className="absolute -top-8 -left-10 text-9xl sm:text-[12rem] opacity-80 rotate-[-12deg] drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]">
           🕸️
         </span>
-        <span className="absolute -top-10 -right-8 text-8xl sm:text-9xl opacity-45 rotate-[18deg] drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]">
+        <span className="absolute -top-10 -right-8 text-8xl sm:text-9xl opacity-70 rotate-[18deg] drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]">
+          🕸️
+        </span>
+        <span className="absolute top-[58%] -left-6 text-7xl opacity-50 rotate-[6deg] drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]">
           🕸️
         </span>
 
@@ -74,7 +77,7 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
           👻
         </span>
         <span
-          className="hidden sm:block absolute top-1/2 left-6 text-4xl opacity-60 animate-spooky-bob"
+          className="absolute top-[42%] right-3 sm:right-6 text-3xl sm:text-4xl opacity-65 animate-spooky-bob"
           style={{ animationDelay: "2s", animationDuration: "5.2s" }}
         >
           🕷️

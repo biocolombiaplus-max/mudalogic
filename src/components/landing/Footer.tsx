@@ -23,8 +23,11 @@ export default function Footer({
     <footer id="contacto" className="relative bg-navy text-white pt-20 pb-24 lg:pb-8 overflow-hidden">
       <HalloweenDecor
         items={[
-          { emoji: "🕸️", className: "-top-8 left-[6%] text-7xl sm:text-8xl opacity-40 rotate-6" },
-          { emoji: "🦇", className: "top-10 right-10 sm:right-24 text-3xl opacity-55 animate-spooky-sway", style: { animationDuration: "4.4s" } },
+          { emoji: "🕸️", className: "-top-8 left-[6%] text-7xl sm:text-8xl opacity-55 rotate-6 drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]" },
+          { emoji: "🦇", className: "top-[6%] right-2 sm:right-24 text-3xl opacity-70 animate-spooky-sway", style: { animationDuration: "4.4s" } },
+          { emoji: "🎃", className: "top-[40%] left-2 sm:left-20 text-3xl opacity-65 animate-spooky-bob", style: { animationDuration: "5.2s", animationDelay: "0.6s" } },
+          { emoji: "👻", className: "top-[68%] right-2 sm:right-16 text-3xl opacity-65 animate-spooky-bob", style: { animationDuration: "4.8s", animationDelay: "1s" } },
+          { emoji: "🕷️", className: "top-[90%] left-2 sm:left-24 text-2xl sm:text-3xl opacity-60 animate-spooky-sway", style: { animationDuration: "3.6s", animationDelay: "1.3s" } },
         ]}
       />
       <div className="container-page relative z-10 grid md:grid-cols-4 gap-10">

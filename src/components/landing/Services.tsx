@@ -10,9 +10,11 @@ export default function Services({ services }: { services: Service[] }) {
     <section id="servicios" className="relative py-14 sm:py-20 lg:py-24 bg-white overflow-hidden">
       <HalloweenDecor
         items={[
-          { emoji: "🕸️", className: "-top-10 -right-10 text-9xl opacity-[0.07] rotate-12" },
-          { emoji: "👻", className: "top-16 left-4 sm:left-10 text-3xl sm:text-4xl opacity-45 animate-spooky-bob", style: { animationDuration: "5.2s" } },
-          { emoji: "🦇", className: "bottom-10 right-6 sm:right-16 text-3xl opacity-50 animate-spooky-drift", style: { animationDuration: "6.4s", animationDelay: "1s" } },
+          { emoji: "🕸️", className: "-top-10 -right-10 text-9xl opacity-20 rotate-12 drop-shadow-[0_2px_10px_rgba(0,0,0,0.2)]" },
+          { emoji: "👻", className: "top-[8%] left-2 sm:left-10 text-3xl sm:text-4xl opacity-50 animate-spooky-bob", style: { animationDuration: "5.2s" } },
+          { emoji: "🦇", className: "top-[35%] right-2 sm:right-16 text-3xl opacity-50 animate-spooky-drift", style: { animationDuration: "6.4s", animationDelay: "1s" } },
+          { emoji: "🎃", className: "top-[62%] left-1 sm:left-16 text-3xl sm:text-4xl opacity-45 animate-spooky-sway", style: { animationDuration: "4.2s", animationDelay: "0.4s" } },
+          { emoji: "🕷️", className: "top-[88%] right-2 sm:right-20 text-2xl sm:text-3xl opacity-50 animate-spooky-bob", style: { animationDuration: "4.8s", animationDelay: "1.4s" } },
         ]}
       />
       <div className="container-page relative z-10">

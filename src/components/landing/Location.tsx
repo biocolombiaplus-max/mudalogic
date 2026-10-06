@@ -30,8 +30,10 @@ export default function Location({
     <section id="ubicacion" className="relative py-14 sm:py-20 lg:py-24 bg-neutral-50 overflow-hidden">
       <HalloweenDecor
         items={[
-          { emoji: "🦇", className: "top-10 right-4 sm:right-20 text-3xl sm:text-4xl opacity-50 animate-spooky-drift", style: { animationDuration: "6s" } },
-          { emoji: "🎃", className: "-bottom-4 left-6 text-3xl opacity-40 animate-spooky-bob", style: { animationDuration: "5.4s", animationDelay: "1.2s" } },
+          { emoji: "🦇", className: "top-[6%] right-2 sm:right-20 text-3xl sm:text-4xl opacity-50 animate-spooky-drift", style: { animationDuration: "6s" } },
+          { emoji: "🕸️", className: "top-[30%] -left-6 text-7xl opacity-15 rotate-[8deg]" },
+          { emoji: "🕷️", className: "top-[58%] right-1 sm:right-10 text-2xl sm:text-3xl opacity-50 animate-spooky-sway", style: { animationDuration: "3.8s", animationDelay: "0.6s" } },
+          { emoji: "🎃", className: "top-[86%] left-2 sm:left-6 text-3xl opacity-45 animate-spooky-bob", style: { animationDuration: "5.4s", animationDelay: "1.2s" } },
         ]}
       />
       <div className="container-page relative z-10">

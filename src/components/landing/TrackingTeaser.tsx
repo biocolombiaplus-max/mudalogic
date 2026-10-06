@@ -25,8 +25,9 @@ export default function TrackingTeaser() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(77,141,255,0.18),transparent_45%)]" />
       <HalloweenDecor
         items={[
-          { emoji: "🎃", className: "top-6 left-6 sm:left-16 text-4xl opacity-85 animate-spooky-bob", style: { animationDuration: "4.6s" } },
-          { emoji: "🦇", className: "bottom-8 right-6 sm:right-20 text-3xl sm:text-4xl opacity-80 animate-spooky-drift", style: { animationDuration: "6s", animationDelay: "0.8s" } },
+          { emoji: "🎃", className: "top-[8%] left-2 sm:left-16 text-4xl opacity-90 animate-spooky-bob", style: { animationDuration: "4.6s" } },
+          { emoji: "🕸️", className: "top-[40%] -right-6 text-8xl opacity-25 rotate-[14deg]" },
+          { emoji: "🦇", className: "top-[80%] right-2 sm:right-20 text-3xl sm:text-4xl opacity-85 animate-spooky-drift", style: { animationDuration: "6s", animationDelay: "0.8s" } },
         ]}
       />
       <div className="container-page relative z-10">
