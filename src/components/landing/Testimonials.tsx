@@ -1,12 +1,19 @@
 import { Star, Quote } from "lucide-react";
 import { SectionHeading } from "./Services";
+import HalloweenDecor from "./HalloweenDecor";
 
 type T = { name: string; city: string; text: string; rating: number };
 
 export default function Testimonials({ testimonials }: { testimonials: T[] }) {
   return (
-    <section id="testimonios" className="py-14 sm:py-20 lg:py-24 bg-white">
-      <div className="container-page">
+    <section id="testimonios" className="relative py-14 sm:py-20 lg:py-24 bg-white overflow-hidden">
+      <HalloweenDecor
+        items={[
+          { emoji: "🦇", className: "top-10 right-6 sm:right-20 text-3xl opacity-50 animate-spooky-sway", style: { animationDuration: "3.8s" } },
+          { emoji: "🎃", className: "bottom-6 left-4 sm:left-14 text-3xl sm:text-4xl opacity-45 animate-spooky-bob", style: { animationDuration: "5.6s", animationDelay: "0.5s" } },
+        ]}
+      />
+      <div className="container-page relative z-10">
         <SectionHeading
           eyebrow="Testimonios"
           title="Familias y empresas que confiaron en nosotros"

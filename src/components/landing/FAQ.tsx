@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import { SectionHeading } from "./Services";
+import HalloweenDecor from "./HalloweenDecor";
 
 type Item = { question: string; answer: string };
 
@@ -12,8 +13,14 @@ export default function FAQ({ items }: { items: Item[] }) {
   if (!items || items.length === 0) return null;
 
   return (
-    <section id="preguntas" className="py-14 sm:py-20 lg:py-24 bg-neutral-50">
-      <div className="container-page max-w-3xl">
+    <section id="preguntas" className="relative py-14 sm:py-20 lg:py-24 bg-neutral-50 overflow-hidden">
+      <HalloweenDecor
+        items={[
+          { emoji: "👻", className: "top-6 right-4 sm:right-16 text-3xl opacity-45 animate-spooky-drift", style: { animationDuration: "6.2s" } },
+          { emoji: "🕷️", className: "bottom-10 left-4 sm:left-12 text-2xl sm:text-3xl opacity-45 animate-spooky-sway", style: { animationDuration: "3.4s", animationDelay: "1s" } },
+        ]}
+      />
+      <div className="container-page max-w-3xl relative z-10">
         <SectionHeading eyebrow="Preguntas frecuentes" title="Todo lo que quieres saber antes de contratar" />
 
         <div className="mt-12 space-y-3">

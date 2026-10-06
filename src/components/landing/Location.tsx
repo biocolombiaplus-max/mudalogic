@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { MapPin, Navigation, Phone, Building2 } from "lucide-react";
 import { SectionHeading } from "./Services";
+import HalloweenDecor from "./HalloweenDecor";
 
 type Props = {
   addressCucuta: string;
@@ -26,8 +27,14 @@ export default function Location({
   phoneDisplay,
 }: Props) {
   return (
-    <section id="ubicacion" className="py-14 sm:py-20 lg:py-24 bg-neutral-50">
-      <div className="container-page">
+    <section id="ubicacion" className="relative py-14 sm:py-20 lg:py-24 bg-neutral-50 overflow-hidden">
+      <HalloweenDecor
+        items={[
+          { emoji: "🦇", className: "top-10 right-4 sm:right-20 text-3xl sm:text-4xl opacity-50 animate-spooky-drift", style: { animationDuration: "6s" } },
+          { emoji: "🎃", className: "-bottom-4 left-6 text-3xl opacity-40 animate-spooky-bob", style: { animationDuration: "5.4s", animationDelay: "1.2s" } },
+        ]}
+      />
+      <div className="container-page relative z-10">
         <SectionHeading
           eyebrow="Nuestras sedes"
           title="Encuéntranos en Cúcuta y Medellín"

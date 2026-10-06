@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, MapPin, PackageSearch } from "lucide-react";
+import HalloweenDecor from "./HalloweenDecor";
 
 export default function TrackingTeaser() {
   const [code, setCode] = useState("");
@@ -22,7 +23,13 @@ export default function TrackingTeaser() {
   return (
     <section id="rastreo" className="py-14 sm:py-20 lg:py-24 bg-navy relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(77,141,255,0.18),transparent_45%)]" />
-      <div className="container-page relative">
+      <HalloweenDecor
+        items={[
+          { emoji: "🎃", className: "top-6 left-6 sm:left-16 text-4xl opacity-85 animate-spooky-bob", style: { animationDuration: "4.6s" } },
+          { emoji: "🦇", className: "bottom-8 right-6 sm:right-20 text-3xl sm:text-4xl opacity-80 animate-spooky-drift", style: { animationDuration: "6s", animationDelay: "0.8s" } },
+        ]}
+      />
+      <div className="container-page relative z-10">
         <div className="max-w-4xl mx-auto rounded-3xl bg-gradient-to-br from-white/10 to-white/[0.03] border border-white/10 backdrop-blur p-10 sm:p-14 text-center">
           <div className="mx-auto w-16 h-16 rounded-2xl bg-brand/20 flex items-center justify-center text-brand-light">
             <PackageSearch size={30} />

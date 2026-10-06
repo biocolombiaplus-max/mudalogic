@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { SectionHeading } from "./Services";
 import { ImageIcon } from "lucide-react";
+import HalloweenDecor from "./HalloweenDecor";
 
 type Img = { src: string; caption: string };
 
@@ -9,8 +10,14 @@ export default function Gallery({ images }: { images: Img[] }) {
   if (items.length === 0) return null;
 
   return (
-    <section id="galeria" className="py-14 sm:py-20 lg:py-24 bg-white">
-      <div className="container-page">
+    <section id="galeria" className="relative py-14 sm:py-20 lg:py-24 bg-white overflow-hidden">
+      <HalloweenDecor
+        items={[
+          { emoji: "👻", className: "top-8 left-4 sm:left-16 text-3xl sm:text-4xl opacity-45 animate-spooky-bob", style: { animationDuration: "5s" } },
+          { emoji: "🕸️", className: "-bottom-10 -right-10 text-9xl opacity-[0.07] -rotate-12" },
+        ]}
+      />
+      <div className="container-page relative z-10">
         <SectionHeading
           eyebrow="Galería"
           title="Así cuidamos cada mudanza"

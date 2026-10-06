@@ -1,4 +1,5 @@
 import { MessageCircle, ArrowRight } from "lucide-react";
+import HalloweenDecor from "./HalloweenDecor";
 
 export default function CTASection({
   whatsappHref,
@@ -10,7 +11,13 @@ export default function CTASection({
   return (
     <section className="py-14 sm:py-16 lg:py-20 bg-gradient-to-br from-brand to-brand-dark relative overflow-hidden">
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_10%_10%,white,transparent_35%)]" />
-      <div className="container-page relative text-center">
+      <HalloweenDecor
+        items={[
+          { emoji: "👻", className: "top-4 right-6 sm:right-20 text-4xl opacity-70 animate-spooky-bob", style: { animationDuration: "5s" } },
+          { emoji: "🎃", className: "bottom-2 left-4 sm:left-16 text-3xl sm:text-4xl opacity-70 animate-spooky-sway", style: { animationDuration: "4.2s", animationDelay: "0.7s" } },
+        ]}
+      />
+      <div className="container-page relative z-10 text-center">
         <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight max-w-2xl mx-auto">
           Tu próxima mudanza empieza con un mensaje
         </h2>

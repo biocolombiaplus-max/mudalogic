@@ -1,5 +1,6 @@
 import { ShieldCheck } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
+import HalloweenDecor from "./HalloweenDecor";
 
 type Badge = { icon: string; title: string; desc: string };
 
@@ -7,8 +8,14 @@ export default function TrustBadges({ badges }: { badges: Badge[] }) {
   if (!badges || badges.length === 0) return null;
 
   return (
-    <section className="py-14 bg-white border-b border-black/5">
-      <div className="container-page">
+    <section className="relative py-14 bg-white border-b border-black/5 overflow-hidden">
+      <HalloweenDecor
+        items={[
+          { emoji: "🦇", className: "top-2 right-10 text-3xl opacity-50 animate-spooky-sway", style: { animationDuration: "4s" } },
+          { emoji: "🎃", className: "-bottom-3 left-[8%] text-3xl opacity-40 animate-spooky-bob", style: { animationDuration: "5s", animationDelay: "0.6s" } },
+        ]}
+      />
+      <div className="container-page relative z-10">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {badges.map((b, i) => {
             const Icon = ICON_MAP[b.icon] ?? ShieldCheck;

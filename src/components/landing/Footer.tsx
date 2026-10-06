@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Phone, Mail, MapPin, MessageCircle, Lock } from "lucide-react";
+import HalloweenDecor from "./HalloweenDecor";
 
 type Props = {
   logo: string;
@@ -19,8 +20,14 @@ export default function Footer({
   whatsappHref,
 }: Props) {
   return (
-    <footer id="contacto" className="bg-navy text-white pt-20 pb-24 lg:pb-8">
-      <div className="container-page grid md:grid-cols-4 gap-10">
+    <footer id="contacto" className="relative bg-navy text-white pt-20 pb-24 lg:pb-8 overflow-hidden">
+      <HalloweenDecor
+        items={[
+          { emoji: "🕸️", className: "-top-8 left-[6%] text-7xl sm:text-8xl opacity-40 rotate-6" },
+          { emoji: "🦇", className: "top-10 right-10 sm:right-24 text-3xl opacity-55 animate-spooky-sway", style: { animationDuration: "4.4s" } },
+        ]}
+      />
+      <div className="container-page relative z-10 grid md:grid-cols-4 gap-10">
         <div>
           {logo ? (
             <Image src={logo} alt="MudaLogic" width={150} height={42} unoptimized className="h-9 w-auto object-contain" />

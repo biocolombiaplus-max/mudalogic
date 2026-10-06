@@ -35,10 +35,10 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
       </div>
 
       <div className="absolute inset-0 z-[6] overflow-hidden pointer-events-none select-none" aria-hidden>
-        <span className="absolute -top-8 -left-10 text-9xl sm:text-[11rem] opacity-20 rotate-[-12deg] drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+        <span className="absolute -top-8 -left-10 text-9xl sm:text-[11rem] opacity-55 rotate-[-12deg] drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]">
           🕸️
         </span>
-        <span className="absolute -top-10 -right-8 text-8xl sm:text-9xl opacity-15 rotate-[18deg] drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+        <span className="absolute -top-10 -right-8 text-8xl sm:text-9xl opacity-45 rotate-[18deg] drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]">
           🕸️
         </span>
 

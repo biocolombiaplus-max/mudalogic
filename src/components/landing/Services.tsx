@@ -1,13 +1,21 @@
 import Image from "next/image";
 import { Box } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
+import HalloweenDecor from "./HalloweenDecor";
 
 type Service = { title: string; desc: string; icon: string; image?: string };
 
 export default function Services({ services }: { services: Service[] }) {
   return (
-    <section id="servicios" className="py-14 sm:py-20 lg:py-24 bg-white">
-      <div className="container-page">
+    <section id="servicios" className="relative py-14 sm:py-20 lg:py-24 bg-white overflow-hidden">
+      <HalloweenDecor
+        items={[
+          { emoji: "🕸️", className: "-top-10 -right-10 text-9xl opacity-[0.07] rotate-12" },
+          { emoji: "👻", className: "top-16 left-4 sm:left-10 text-3xl sm:text-4xl opacity-45 animate-spooky-bob", style: { animationDuration: "5.2s" } },
+          { emoji: "🦇", className: "bottom-10 right-6 sm:right-16 text-3xl opacity-50 animate-spooky-drift", style: { animationDuration: "6.4s", animationDelay: "1s" } },
+        ]}
+      />
+      <div className="container-page relative z-10">
         <SectionHeading
           eyebrow="Nuestros servicios"
           title="Todo lo que necesitas para tu mudanza, en un solo lugar"
