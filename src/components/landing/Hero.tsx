@@ -35,35 +35,58 @@ export default function Hero({ title, subtitle, image, whatsappHref, stats, onOp
       </div>
 
       <div className="absolute inset-0 z-[6] overflow-hidden pointer-events-none select-none" aria-hidden>
-        <span
-          className="absolute -top-6 -left-6 text-8xl sm:text-9xl opacity-[0.06] rotate-[-12deg]"
-        >
+        <span className="absolute -top-8 -left-10 text-9xl sm:text-[11rem] opacity-20 rotate-[-12deg] drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]">
           🕸️
         </span>
+        <span className="absolute -top-10 -right-8 text-8xl sm:text-9xl opacity-15 rotate-[18deg] drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+          🕸️
+        </span>
+
         <span
-          className="absolute top-8 right-6 sm:top-12 sm:right-16 text-2xl sm:text-4xl opacity-35 animate-float"
-          style={{ animationDelay: "0.3s" }}
+          className="absolute top-20 right-6 sm:top-16 sm:right-20 text-5xl sm:text-6xl opacity-90 animate-spooky-drift drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+          style={{ animationDelay: "0.2s" }}
         >
           🦇
         </span>
         <span
-          className="hidden sm:inline absolute top-28 right-44 text-xl opacity-25 animate-float"
-          style={{ animationDelay: "1.6s", animationDuration: "6.5s" }}
+          className="absolute top-36 right-36 sm:top-32 sm:right-56 text-3xl sm:text-4xl opacity-70 animate-spooky-drift drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+          style={{ animationDelay: "1.4s", animationDuration: "5.5s" }}
         >
           🦇
         </span>
         <span
-          className="absolute bottom-8 left-3 sm:bottom-20 sm:left-10 text-2xl sm:text-4xl opacity-25 animate-float"
-          style={{ animationDelay: "0.9s", animationDuration: "5.8s" }}
+          className="absolute top-6 left-4 sm:top-10 sm:left-16 text-3xl sm:text-5xl opacity-80 animate-spooky-sway drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+          style={{ animationDelay: "0.6s" }}
+        >
+          🦇
+        </span>
+
+        <span
+          className="absolute bottom-24 left-2 sm:bottom-28 sm:left-10 text-6xl sm:text-7xl opacity-90 animate-spooky-bob drop-shadow-[0_6px_14px_rgba(0,0,0,0.5)]"
+          style={{ animationDelay: "0s" }}
         >
           🎃
+        </span>
+        <span
+          className="absolute bottom-10 right-4 sm:bottom-16 sm:right-16 text-5xl sm:text-6xl opacity-85 animate-spooky-bob drop-shadow-[0_6px_14px_rgba(0,0,0,0.5)]"
+          style={{ animationDelay: "1.2s", animationDuration: "4.6s" }}
+        >
+          👻
+        </span>
+        <span
+          className="hidden sm:block absolute top-1/2 left-6 text-4xl opacity-60 animate-spooky-bob"
+          style={{ animationDelay: "2s", animationDuration: "5.2s" }}
+        >
+          🕷️
         </span>
       </div>
 
       <div className="container-page relative z-10 py-28 sm:py-32 lg:py-40">
         <div className="max-w-3xl mx-auto sm:mx-0 flex flex-col items-center sm:items-start text-center sm:text-left animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-orange-400/30 text-white/90 text-xs font-semibold px-4 py-2 mb-6 backdrop-blur">
-            <span className="text-sm leading-none">🎃</span>
+          <div className="inline-flex items-center gap-2 rounded-full bg-orange-500/15 border-2 border-orange-400/60 text-white text-xs font-bold px-4 py-2 mb-6 backdrop-blur shadow-[0_0_20px_rgba(251,146,60,0.35)]">
+            <span className="text-base leading-none animate-spooky-sway inline-block" style={{ animationDuration: "2.4s" }}>
+              🎃
+            </span>
             Modo Halloween · Mudanzas sin sustos, toda Colombia
           </div>
 

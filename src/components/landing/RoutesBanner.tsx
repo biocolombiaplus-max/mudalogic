@@ -45,13 +45,28 @@ export default function RoutesBanner() {
     <section className="relative bg-navy py-7 overflow-hidden border-y border-white/5">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_50%,rgba(77,141,255,0.18),transparent_50%),radial-gradient(circle_at_90%_50%,rgba(17,87,224,0.22),transparent_50%)]" />
 
+      <span
+        className="absolute top-1 right-10 text-3xl opacity-60 animate-spooky-sway pointer-events-none select-none"
+        style={{ animationDuration: "3.6s" }}
+        aria-hidden
+      >
+        🦇
+      </span>
+      <span
+        className="absolute -bottom-2 left-8 text-2xl opacity-50 animate-spooky-bob pointer-events-none select-none"
+        style={{ animationDuration: "4.4s" }}
+        aria-hidden
+      >
+        🎃
+      </span>
+
       <div className="relative container-page flex items-center gap-3 mb-5">
         <div className="flex items-center gap-2 text-brand-light shrink-0">
           <Truck size={18} />
           <span className="text-xs font-bold uppercase tracking-wide">Cobertura nacional</span>
         </div>
         <div className="h-px flex-1 bg-white/10" />
-        <span className="text-xs text-white/50 shrink-0 hidden sm:inline">🎃 Rutas frecuentes, toda Colombia</span>
+        <span className="text-xs text-white/50 shrink-0">🎃 Rutas frecuentes, toda Colombia</span>
       </div>
 
       <div className="relative overflow-hidden">

@@ -151,6 +151,41 @@ button {
   }
 }
 
+@keyframes spooky-bob {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-22px) rotate(6deg); }
+}
+.animate-spooky-bob {
+  animation: spooky-bob 4s ease-in-out infinite;
+}
+
+@keyframes spooky-drift {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(14px, -16px) rotate(8deg); }
+  50% { transform: translate(-6px, -28px) rotate(-6deg); }
+  75% { transform: translate(-16px, -10px) rotate(4deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+.animate-spooky-drift {
+  animation: spooky-drift 7s ease-in-out infinite;
+}
+
+@keyframes spooky-sway {
+  0%, 100% { transform: translateX(0) rotate(-4deg); }
+  50% { transform: translateX(18px) rotate(4deg); }
+}
+.animate-spooky-sway {
+  animation: spooky-sway 3.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spooky-bob,
+  .animate-spooky-drift,
+  .animate-spooky-sway {
+    animation: none;
+  }
+}
+
 ::selection {
   background: var(--brand);
   color: white;
