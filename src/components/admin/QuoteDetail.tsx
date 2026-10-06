@@ -161,7 +161,7 @@ export default function QuoteDetail({ quote, items }: { quote: Quote; items: Quo
               <div key={item.id} className="flex items-center justify-between bg-neutral-50 rounded-lg px-3 py-2 text-sm">
                 <span className="font-semibold text-navy">{item.name}</span>
                 <span className="text-neutral-500 text-xs">
-                  {item.category} · x{item.quantity}
+                  {item.category ? `${item.category} · ` : ""}x{item.quantity}
                 </span>
               </div>
             ))}

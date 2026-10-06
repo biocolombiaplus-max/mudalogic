@@ -16,12 +16,29 @@ import {
   Package,
   Trash2,
   Plus,
+  Minus,
   CheckCircle2,
   MessageCircle,
 } from "lucide-react";
 import type { Quote, QuoteItem } from "@/lib/types";
+import { COLOMBIA_DEPARTMENTS } from "@/lib/colombia-geo";
 
-const CATEGORIES = ["Sala", "Habitación", "Cocina", "Electrodomésticos", "Oficina", "Cajas", "Frágil / especial", "Otro"];
+function parseAddress(saved: string): { department: string; city: string; detail: string } {
+  const parts = saved.split(",").map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 3) {
+    const department = parts[parts.length - 1];
+    const city = parts[parts.length - 2];
+    const dept = COLOMBIA_DEPARTMENTS.find((d) => d.departamento === department);
+    if (dept && dept.municipios.includes(city)) {
+      return { department, city, detail: parts.slice(0, -2).join(", ") };
+    }
+  }
+  return { department: "", city: "", detail: saved };
+}
+
+function buildAddress(detail: string, city: string, department: string): string {
+  return [detail, city, department].filter(Boolean).join(", ");
+}
 
 type Step = "datos" | "inventario" | "enviado";
 
@@ -190,17 +207,24 @@ function Field({ label, icon, children }: { label: string; icon?: React.ReactNod
 /* ---------------- Step 1: datos ---------------- */
 
 function StepDatos({ token, quote, onSaved }: { token: string; quote: Quote; onSaved: (q: Quote) => void }) {
+  const originParsed = parseAddress(quote.origin_address || "");
+  const destParsed = parseAddress(quote.destination_address || "");
+
   const [form, setForm] = useState({
     client_name: quote.client_name || "",
     client_phone: quote.client_phone || "",
     client_email: quote.client_email || "",
-    origin_address: quote.origin_address || "",
     origin_floor: quote.origin_floor || "",
-    destination_address: quote.destination_address || "",
     destination_floor: quote.destination_floor || "",
     moving_date: quote.moving_date || "",
     notes: quote.notes || "",
   });
+  const [originDept, setOriginDept] = useState(originParsed.department);
+  const [originCity, setOriginCity] = useState(originParsed.city);
+  const [originDetail, setOriginDetail] = useState(originParsed.detail);
+  const [destDept, setDestDept] = useState(destParsed.department);
+  const [destCity, setDestCity] = useState(destParsed.city);
+  const [destDetail, setDestDetail] = useState(destParsed.detail);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -208,18 +232,26 @@ function StepDatos({ token, quote, onSaved }: { token: string; quote: Quote; onS
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  const originMunicipios = COLOMBIA_DEPARTMENTS.find((d) => d.departamento === originDept)?.municipios ?? [];
+  const destMunicipios = COLOMBIA_DEPARTMENTS.find((d) => d.departamento === destDept)?.municipios ?? [];
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!form.client_name || !form.client_phone || !form.origin_address || !form.destination_address) {
-      setError("Completa al menos tu nombre, teléfono, origen y destino.");
+    if (!form.client_name || !form.client_phone || !originDept || !originCity || !destDept || !destCity) {
+      setError("Completa tu nombre, teléfono, y el departamento y municipio de origen y destino.");
       return;
     }
+    const payload = {
+      ...form,
+      origin_address: buildAddress(originDetail, originCity, originDept),
+      destination_address: buildAddress(destDetail, destCity, destDept),
+    };
     setSaving(true);
     const res = await fetch(`/api/public/quotes/${token}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     setSaving(false);
     if (!res.ok) {
@@ -227,7 +259,7 @@ function StepDatos({ token, quote, onSaved }: { token: string; quote: Quote; onS
       setError(d.error || "No se pudo guardar. Intenta de nuevo.");
       return;
     }
-    onSaved({ ...quote, ...form });
+    onSaved({ ...quote, ...payload });
   }
 
   return (
@@ -250,21 +282,110 @@ function StepDatos({ token, quote, onSaved }: { token: string; quote: Quote; onS
           <input className="pinput" value={form.client_email} onChange={(e) => update("client_email", e.target.value)} />
         </Field>
 
-        <div className="grid sm:grid-cols-[1fr_auto] gap-4">
-          <Field label="Dirección de origen" icon={<MapPin size={14} />}>
-            <input className="pinput" value={form.origin_address} onChange={(e) => update("origin_address", e.target.value)} />
-          </Field>
-          <Field label="Piso (si aplica)" icon={<Building2 size={14} />}>
-            <input className="pinput !w-24" value={form.origin_floor} onChange={(e) => update("origin_floor", e.target.value)} placeholder="Ej: 4" />
-          </Field>
+        <div className="rounded-xl border border-neutral-100 p-4 space-y-3">
+          <p className="text-xs font-bold text-brand uppercase tracking-wide flex items-center gap-1.5">
+            <MapPin size={14} /> Origen
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Departamento">
+              <select
+                className="pinput"
+                value={originDept}
+                onChange={(e) => {
+                  setOriginDept(e.target.value);
+                  setOriginCity("");
+                }}
+              >
+                <option value="">Selecciona...</option>
+                {COLOMBIA_DEPARTMENTS.map((d) => (
+                  <option key={d.departamento} value={d.departamento}>
+                    {d.departamento}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Municipio">
+              <select
+                className="pinput disabled:opacity-50"
+                value={originCity}
+                onChange={(e) => setOriginCity(e.target.value)}
+                disabled={!originDept}
+              >
+                <option value="">{originDept ? "Selecciona..." : "Elige el departamento primero"}</option>
+                {originMunicipios.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="grid sm:grid-cols-[1fr_auto] gap-4">
+            <Field label="Dirección exacta (opcional)">
+              <input
+                className="pinput"
+                value={originDetail}
+                onChange={(e) => setOriginDetail(e.target.value)}
+                placeholder="Calle, carrera, barrio..."
+              />
+            </Field>
+            <Field label="Piso (si aplica)" icon={<Building2 size={14} />}>
+              <input className="pinput !w-24" value={form.origin_floor} onChange={(e) => update("origin_floor", e.target.value)} placeholder="Ej: 4" />
+            </Field>
+          </div>
         </div>
-        <div className="grid sm:grid-cols-[1fr_auto] gap-4">
-          <Field label="Dirección de destino" icon={<MapPin size={14} />}>
-            <input className="pinput" value={form.destination_address} onChange={(e) => update("destination_address", e.target.value)} />
-          </Field>
-          <Field label="Piso (si aplica)" icon={<Building2 size={14} />}>
-            <input className="pinput !w-24" value={form.destination_floor} onChange={(e) => update("destination_floor", e.target.value)} placeholder="Ej: 2" />
-          </Field>
+
+        <div className="rounded-xl border border-neutral-100 p-4 space-y-3">
+          <p className="text-xs font-bold text-brand uppercase tracking-wide flex items-center gap-1.5">
+            <MapPin size={14} /> Destino
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Departamento">
+              <select
+                className="pinput"
+                value={destDept}
+                onChange={(e) => {
+                  setDestDept(e.target.value);
+                  setDestCity("");
+                }}
+              >
+                <option value="">Selecciona...</option>
+                {COLOMBIA_DEPARTMENTS.map((d) => (
+                  <option key={d.departamento} value={d.departamento}>
+                    {d.departamento}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Municipio">
+              <select
+                className="pinput disabled:opacity-50"
+                value={destCity}
+                onChange={(e) => setDestCity(e.target.value)}
+                disabled={!destDept}
+              >
+                <option value="">{destDept ? "Selecciona..." : "Elige el departamento primero"}</option>
+                {destMunicipios.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="grid sm:grid-cols-[1fr_auto] gap-4">
+            <Field label="Dirección exacta (opcional)">
+              <input
+                className="pinput"
+                value={destDetail}
+                onChange={(e) => setDestDetail(e.target.value)}
+                placeholder="Calle, carrera, barrio..."
+              />
+            </Field>
+            <Field label="Piso (si aplica)" icon={<Building2 size={14} />}>
+              <input className="pinput !w-24" value={form.destination_floor} onChange={(e) => update("destination_floor", e.target.value)} placeholder="Ej: 2" />
+            </Field>
+          </div>
         </div>
 
         <Field label="Fecha estimada (opcional)" icon={<CalendarDays size={14} />}>
@@ -300,7 +421,6 @@ function StepInventario({
   onNext: () => void;
 }) {
   const [name, setName] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
@@ -315,7 +435,7 @@ function StepInventario({
     const res = await fetch(`/api/public/quotes/${token}/items`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, category, quantity }),
+      body: JSON.stringify({ name, category: "", quantity }),
     });
     const data = await res.json();
     setAdding(false);
@@ -323,7 +443,7 @@ function StepInventario({
       setError(data.error || "No se pudo agregar el artículo");
       return;
     }
-    setItems([...items, { id: data.id, quote_id: "", name, category, quantity, created_at: new Date().toISOString() }]);
+    setItems([...items, { id: data.id, quote_id: "", name, category: "", quantity, created_at: new Date().toISOString() }]);
     setName("");
     setQuantity(1);
   }
@@ -342,27 +462,41 @@ function StepInventario({
         Agrega los objetos y muebles que vas a mudar — entre más detallado, más precisa la cotización.
       </p>
 
-      <div className="mt-6 grid sm:grid-cols-[1fr_1fr_auto] gap-4">
+      <div className="mt-6 grid sm:grid-cols-[1fr_auto] gap-4">
         <Field label="Artículo">
-          <input className="pinput" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Nevera, sofá, caja de cocina..." />
-        </Field>
-        <Field label="Categoría">
-          <select className="pinput" value={category} onChange={(e) => setCategory(e.target.value)}>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          <input
+            className="pinput"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addItem();
+              }
+            }}
+            placeholder="Ej: Nevera, sofá, caja de cocina..."
+          />
         </Field>
         <Field label="Cant.">
-          <input
-            type="number"
-            min={1}
-            className="pinput !w-20"
-            value={quantity}
-            onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-          />
+          <div className="flex items-center gap-1 border-1.5 border-neutral-200 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              className="px-3 py-2.5 text-neutral-500 hover:bg-neutral-100 active:bg-neutral-200"
+              aria-label="Restar"
+            >
+              <Minus size={16} />
+            </button>
+            <span className="w-8 text-center text-sm font-bold text-navy select-none">{quantity}</span>
+            <button
+              type="button"
+              onClick={() => setQuantity((q) => Math.min(999, q + 1))}
+              className="px-3 py-2.5 text-neutral-500 hover:bg-neutral-100 active:bg-neutral-200"
+              aria-label="Sumar"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
         </Field>
       </div>
 
@@ -387,7 +521,7 @@ function StepInventario({
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-navy truncate">{item.name}</p>
                   <p className="text-xs text-neutral-500">
-                    {item.category} · x{item.quantity}
+                    x{item.quantity}
                   </p>
                 </div>
                 <button onClick={() => removeItem(item.id)} className="text-neutral-300 hover:text-red-500 shrink-0">
