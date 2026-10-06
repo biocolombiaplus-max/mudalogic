@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://mudalogic.com"),
   title: "MudaLogic | Mudanzas y Trasteos Nacionales en Colombia",
   description:
     "MudaLogic: mudanzas y trasteos nacionales desde Cúcuta y Medellín hacia toda Colombia. Empacamos y desempacamos desde cero, los mejores precios, contrato digital y rastreo en tiempo real. Cotiza gratis por WhatsApp.",
@@ -28,8 +29,15 @@ export const metadata: Metadata = {
     title: "MudaLogic | Mudanzas sin estrés, solo sonrisas",
     description:
       "Especialistas en mudanzas nacionales. Empacamos, transportamos y desempacamos por ti. Cotiza gratis y rastrea tu mudanza en tiempo real.",
+    siteName: "MudaLogic",
     locale: "es_CO",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MudaLogic | Mudanzas sin estrés, solo sonrisas",
+    description:
+      "Especialistas en mudanzas nacionales. Empacamos, transportamos y desempacamos por ti. Cotiza gratis y rastrea tu mudanza en tiempo real.",
   },
 };
 

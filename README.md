@@ -49,26 +49,44 @@ Copia `.env.local` (ya incluido para desarrollo) y define:
 - `POSTGRES_URL` (o `DATABASE_URL`): cadena de conexión a una base de datos
   Postgres. En local puede apuntar a un Postgres propio; en Vercel se llena
   automáticamente al agregar el storage "Postgres" del proyecto.
-- `BLOB_READ_WRITE_TOKEN` (opcional en local, recomendado en producción): se
-  llena automáticamente al agregar el storage "Blob" en Vercel. Sin este
-  token las imágenes se guardan en disco local (`public/uploads/`), lo cual
-  solo sirve para desarrollo.
+- `BLOB_READ_WRITE_TOKEN` (opcional, respaldo): se llena automáticamente al
+  agregar el storage "Blob" en Vercel. Solo se usa si R2 (ver abajo) no está
+  configurado, o si la subida a R2 falla.
+- Cloudflare R2 (recomendado en producción, capa gratuita mucho más amplia
+  que Vercel Blob — 10 GB y sin costo de salida): crea un bucket en
+  [Cloudflare R2](https://dash.cloudflare.com/) con acceso público (o un
+  dominio personalizado) y define:
+  - `R2_ACCOUNT_ID`
+  - `R2_ACCESS_KEY_ID`
+  - `R2_SECRET_ACCESS_KEY`
+  - `R2_BUCKET_NAME`
+  - `R2_PUBLIC_URL` (la URL pública del bucket, ej.
+    `https://pub-xxxx.r2.dev` o tu dominio personalizado, sin `/` al final)
+
+  Si estas 5 variables están definidas, las imágenes se suben a R2. Si no,
+  el proyecto usa `BLOB_READ_WRITE_TOKEN` (Vercel Blob). Si ninguna está
+  definida, las imágenes se guardan en disco local (`public/uploads/`), lo
+  cual solo sirve para desarrollo.
 
 ## Datos y almacenamiento
 
 Este proyecto usa **Postgres** para todos los datos (cotizaciones, contratos,
-inventario, rastreo, contenido del sitio) y **Vercel Blob** para las imágenes
-subidas desde el panel. Esto es necesario porque en hosting serverless (como
-Vercel) cada solicitud puede atenderla una instancia distinta sin disco
-compartido — guardar datos en un archivo local (SQLite) o en `public/uploads/`
-se pierde o directamente falla entre una petición y otra.
+inventario, rastreo, contenido del sitio) y **Cloudflare R2** (o Vercel Blob
+como respaldo) para las imágenes subidas desde el panel. Esto es necesario
+porque en hosting serverless (como Vercel) cada solicitud puede atenderla una
+instancia distinta sin disco compartido — guardar datos en un archivo local
+(SQLite) o en `public/uploads/` se pierde o directamente falla entre una
+petición y otra.
 
-Para que el proyecto funcione en Vercel solo hace falta agregar, desde el
-dashboard del proyecto → **Storage**, un almacenamiento **Postgres** y uno
-**Blob** (ambos con capa gratuita) — las variables de entorno quedan
-configuradas automáticamente, sin tocar código.
+Para que el proyecto funcione en Vercel hace falta agregar, desde el
+dashboard del proyecto → **Storage**, un almacenamiento **Postgres** (las
+variables quedan configuradas automáticamente). Para las imágenes, se
+recomienda configurar Cloudflare R2 (variables `R2_*` de arriba) en vez de
+Vercel Blob, ya que su capa gratuita es mucho más amplia y evita que la
+landing se quede sin imágenes al llenarse la cuota de Blob.
 
 ## Stack
 
 Next.js 16 (App Router) + TypeScript + Tailwind CSS 4 + Postgres (`pg`) +
-Vercel Blob + JWT (jose) para sesión de administrador + Lucide para iconos.
+Cloudflare R2 (con Vercel Blob como respaldo) + JWT (jose) para sesión de
+administrador + Lucide para iconos.
